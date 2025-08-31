@@ -21,6 +21,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.promtuz.chat.compositions.LocalBackStack
+import com.promtuz.chat.navigation.AppRoutes
+import com.promtuz.chat.navigation.navigate
 import com.promtuz.chat.ui.theme.adjustLight
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
@@ -30,6 +33,7 @@ fun HomeListItem(
     peer: String
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val backStack = LocalBackStack.current;
 
     Box(
         Modifier
@@ -42,7 +46,7 @@ fun HomeListItem(
                     )
                 ),
                 onClick = {
-                    // TODO
+                    navigate(backStack, AppRoutes.ChatScreen(peer))
                 },
                 onLongClick = {
 

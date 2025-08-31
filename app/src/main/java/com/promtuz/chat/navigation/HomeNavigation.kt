@@ -1,18 +1,23 @@
 package com.promtuz.chat.navigation
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.EaseInQuint
+import androidx.compose.animation.core.EaseOutQuint
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -22,6 +27,7 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.promtuz.chat.compositions.LocalHazeState
+import com.promtuz.chat.ui.components.BlurredBars
 import com.promtuz.chat.ui.components.BottomBar
 import com.promtuz.chat.ui.components.TopBar
 import com.promtuz.chat.ui.screens.CallScreen
@@ -30,7 +36,6 @@ import com.promtuz.chat.ui.screens.HomeScreen
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.serialization.Serializable
-
 
 @Serializable
 sealed interface HomeNavKey : NavKey
@@ -46,12 +51,16 @@ object HomeRoutes {
     data object FriendScreen : HomeNavKey
 }
 
+
+data class ScrollState(val scroll: Int, val maxScroll: Int)
+
 @Composable
-fun HomeNavigation(defaultBackStack: List<HomeNavKey>) {
-    val backStack = rememberNavBackStack(*defaultBackStack.toTypedArray())
+fun HomeNavigation() {
+    val backStack = rememberNavBackStack(HomeRoutes.HomeScreen)
 
     val localHazeState = rememberHazeState()
     val hazeState = rememberHazeState()
+    val scrollState = remember { mutableStateOf(ScrollState(0, 0)) }
 
     Scaffold(
         modifier = Modifier
@@ -61,70 +70,72 @@ fun HomeNavigation(defaultBackStack: List<HomeNavKey>) {
         bottomBar = { BottomBar(backStack) }
     ) { innerPadding ->
         CompositionLocalProvider(LocalHazeState provides localHazeState) {
-            NavDisplay(
-                backStack,
-                entryDecorators = listOf(
-                    rememberSavedStateNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                    rememberSceneSetupNavEntryDecorator()
-                ),
-                entryProvider = { key ->
-                    when (key) {
-                        is HomeRoutes.HomeScreen -> {
-                            NavEntry(key = key) {
-                                HomeScreen(hazeState, innerPadding)
+            Box {
+                NavDisplay(
+                    backStack,
+                    entryDecorators = listOf(
+                        rememberSavedStateNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                        rememberSceneSetupNavEntryDecorator()
+                    ),
+                    entryProvider = { key ->
+                        when (key) {
+                            is HomeRoutes.HomeScreen -> {
+                                NavEntry(key = key) {
+                                    HomeScreen(hazeState, innerPadding) { scrollState.value = it }
+                                }
                             }
-                        }
 
-                        is HomeRoutes.CallScreen -> {
-                            NavEntry(key = key) {
-                                CallScreen(hazeState, innerPadding)
+                            is HomeRoutes.CallScreen -> {
+                                NavEntry(key = key) {
+                                    CallScreen(hazeState, innerPadding)
+                                }
                             }
-                        }
 
-                        is HomeRoutes.FriendScreen -> {
-                            NavEntry(key = key) {
-                                FriendScreen(hazeState, innerPadding)
+                            is HomeRoutes.FriendScreen -> {
+                                NavEntry(key = key) {
+                                    FriendScreen(hazeState, innerPadding)
+                                }
                             }
-                        }
 
-                        else -> throw RuntimeException("Invalid Screen")
+                            else -> throw RuntimeException("Invalid Screen")
+                        }
+                    },
+                    transitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(150, 0, EaseInQuint)
+                        ) togetherWith fadeOut(
+                            animationSpec = tween(150, 0, EaseOutQuint)
+                        )
+                    },
+                    popTransitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(150, 0, EaseInQuint)
+                        ) togetherWith fadeOut(
+                            animationSpec = tween(150, 0, EaseOutQuint)
+                        )
+                    },
+                    predictivePopTransitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(100, 0, EaseInQuint)
+                        ) togetherWith fadeOut(
+                            animationSpec = tween(100, 0, EaseOutQuint)
+                        )
                     }
-                },
-                transitionSpec = {
-                    slideInHorizontally(
-                        initialOffsetX = { it },
-                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                    ) togetherWith slideOutHorizontally(
-                        targetOffsetX = { -it / 3 }, // Subtle parallax effect
-                        animationSpec = tween(300, easing = FastOutSlowInEasing)
-                    )
-                },
-                popTransitionSpec = {
-                    slideInHorizontally(
-                        initialOffsetX = { -it / 3 }, // Matching parallax
-                        animationSpec = tween(250, easing = LinearOutSlowInEasing)
-                    ) togetherWith slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = tween(250, easing = LinearOutSlowInEasing)
-                    )
-                },
-                predictivePopTransitionSpec = {
-                    slideInHorizontally(
-                        initialOffsetX = { -it / 3 },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        )
-                    ) togetherWith slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        )
-                    )
-                }
-            )
+                )
+                BlurredBars(
+                    hazeState,
+                    scrollState,
+                    innerPadding.calculateTopPadding(),
+                    Alignment.TopCenter
+                )
+                BlurredBars(
+                    hazeState,
+                    scrollState,
+                    innerPadding.calculateBottomPadding(),
+                    Alignment.BottomCenter
+                )
+            }
         }
     }
 }
