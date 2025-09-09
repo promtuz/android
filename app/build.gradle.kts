@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -57,8 +59,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    
+    kotlin {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
     }
     buildFeatures {
         compose = true
@@ -96,4 +99,13 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
 
     implementation(libs.androidx.core.splashscreen)
+
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    implementation(libs.kotlinx.serialization.json)
+
 }

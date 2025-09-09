@@ -61,8 +61,6 @@ object AppRoutes {
 fun AppNavigation() {
     val backStack = rememberNavBackStack(AppRoutes.LoginScreen)
 
-    // androidx.
-
     CompositionLocalProvider(LocalBackStack provides backStack) {
         PromtuzTheme {
             NavDisplay(
@@ -99,43 +97,44 @@ fun AppNavigation() {
                     }
                 },
                 transitionSpec = {
-                    // Forward: new screen starts 60% slid in, completes slide while fading in
-                    // Previous screen stays rock solid and fades out subtly
+                    // Forward: new screen slides in from 30% while fading in
+                    // Previous screen fades out subtly and stays in place2
                     (slideInHorizontally(
-                        initialOffsetX = { (it * 0.25f).toInt() }, // Start 60% there (40% remaining)
-                        animationSpec = tween(200, easing = FastOutSlowInEasing)
+                        initialOffsetX = { (it * 0.3f).toInt() },
+                        animationSpec = tween(250, easing = FastOutSlowInEasing)
                     ) + fadeIn(
-                        animationSpec = tween(200, easing = FastOutSlowInEasing)
+                        animationSpec = tween(250, easing = FastOutSlowInEasing)
                     )) togetherWith fadeOut(
-                        animationSpec = tween(200, easing = FastOutSlowInEasing),
-                        targetAlpha = 0.2f
+                        animationSpec = tween(250, easing = FastOutSlowInEasing),
+                        targetAlpha = 0.3f
                     )
                 },
                 popTransitionSpec = {
-                    // Back: reverse - slide out to 60% position while fading
+                    // Back: returning screen fades in from subtle state
+                    // Departing screen slides out to 30% while fading out
                     fadeIn(
                         animationSpec = tween(250, easing = FastOutSlowInEasing),
-                        initialAlpha = 0.2f
+                        initialAlpha = 0.3f
                     ) togetherWith (slideOutHorizontally(
-                        targetOffsetX = { (it * 0.25f).toInt() },
+                        targetOffsetX = { (it * 0.3f).toInt() },
                         animationSpec = tween(250, easing = FastOutSlowInEasing)
                     ) + fadeOut(
                         animationSpec = tween(250, easing = FastOutSlowInEasing)
                     ))
                 },
                 predictivePopTransitionSpec = {
-                    // Same as pop but snappier
+                    // Predictive back: smooth slide from left with consistent behavior
                     (slideInHorizontally(
-                        initialOffsetX = { -(it * 0.4f).toInt() },
-                        animationSpec = tween(300, easing = LinearOutSlowInEasing)
+                        initialOffsetX = { -(it * 0.2f).toInt() },
+                        animationSpec = tween(250, easing = FastOutSlowInEasing)
                     ) + fadeIn(
-                        animationSpec = tween(300, easing = LinearOutSlowInEasing),
-                        initialAlpha = 0.2f
+                        animationSpec = tween(250, easing = FastOutSlowInEasing),
+                        initialAlpha = 0.3f
                     )) togetherWith (slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = tween(300, easing = LinearOutSlowInEasing)
+                        targetOffsetX = { (it * 0.3f).toInt() },
+                        animationSpec = tween(250, easing = FastOutSlowInEasing)
                     ) + fadeOut(
-                        animationSpec = tween(300, easing = LinearOutSlowInEasing)
+                        animationSpec = tween(250, easing = FastOutSlowInEasing)
                     ))
                 }
             )

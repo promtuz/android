@@ -120,7 +120,7 @@ fun HomeScreen(
 @Composable
 @Preview
 fun HomeScreenPreview(modifier: Modifier = Modifier) {
-    PromtuzTheme(darkTheme = true, dynamicColor = true) {
+    PromtuzTheme(darkTheme = true) {
         Box(Modifier.background(MaterialTheme.colorScheme.background)) {
             HomeScreen(rememberHazeState(), PaddingValues.Zero) {}
         }

@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            PromtuzTheme(dynamicColor = true) {
+            PromtuzTheme {
                 AppNavigation()
             }
         }

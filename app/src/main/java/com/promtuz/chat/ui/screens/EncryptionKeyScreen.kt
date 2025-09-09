@@ -1,5 +1,6 @@
 package com.promtuz.chat.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ fun EncryptionKeyScreen(modifier: Modifier = Modifier) {
     Box(
         modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .pointerInput(Unit) {
                 detectTapGestures { focusManager.clearFocus() }
             }) {
