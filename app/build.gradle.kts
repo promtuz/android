@@ -49,8 +49,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
         }
@@ -59,13 +58,39 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    
+
     kotlin {
-        compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_11
+
+            freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
+            freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+            freeCompilerArgs.add("-opt-in=androidx.camera.core.ExperimentalGetImage")
+        }
     }
     buildFeatures {
         compose = true
     }
+}
+
+tasks.register<Exec>("buildRustCore") {
+    workingDir = file("src/main/rust")
+    commandLine(
+        "cargo",
+        "ndk",
+        "-t",
+        "armeabi-v7a",
+        "-t",
+        "arm64-v8a",
+        "-t",
+        "x86",
+        "-t",
+        "x86_64",
+        "-o",
+        "../jniLibs",
+        "build",
+        "--release"
+    )
 }
 
 dependencies {
@@ -73,11 +98,13 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.constraintlayout.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.google.material)
     implementation(libs.haze.materials)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
@@ -96,7 +123,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.androidx.material3.adaptive.navigation3)
 
     implementation(libs.androidx.core.splashscreen)
 
@@ -106,6 +133,39 @@ dependencies {
 
     implementation(libs.ktor.serialization.kotlinx.json)
 
+    implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.cbor)
 
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+
+
+    implementation(project.dependencies.platform(libs.koin.bom))
+    implementation(libs.koin.core)
+
+
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.androidx.compose.navigation)
+    implementation(libs.kwik)
+
+    implementation(libs.msgpack.core)
+
+    implementation(kotlin("reflect"))
+
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.video)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.mlkit.vision)
+    implementation(libs.androidx.camera.extensions)
+
+    implementation(libs.barcode.scanning)
+    implementation(libs.zxing.core)
+
+    implementation(libs.timber)
+
+    implementation(libs.capturable)
+    testImplementation(kotlin("test"))
 }

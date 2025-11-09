@@ -1,11 +1,34 @@
 package com.promtuz.chat.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.tooling.preview.*
+import androidx.compose.ui.unit.*
 import androidx.core.graphics.ColorUtils
+
+
+@Composable
+fun gradientScrim(base: Color = MaterialTheme.colorScheme.background) = Brush.verticalGradient(
+    listOf(
+        base.copy(alpha = 0.95f),
+        base.copy(alpha = 0.9f),
+        base.copy(alpha = 0.8f),
+        base.copy(alpha = 0.65f),
+        base.copy(alpha = 0.5f),
+        base.copy(alpha = 0.2f),
+        Color.Transparent
+    )
+)
+
+@Composable
+fun transparentTopAppBar() = TopAppBarDefaults.topAppBarColors(
+    containerColor = Color.Transparent,
+    scrolledContainerColor = Color.Transparent
+)
 
 
 /**
@@ -15,6 +38,7 @@ import androidx.core.graphics.ColorUtils
  * Example:
  * 1. `+0.3f` will increase light by `30%` regardless of base value, but will max out at 100% (pure white)
  * 2. `-0.3f` will decrease light by `30%` regardless of base value, but will max out at 0% (pitch black)
+ *
  */
 fun adjustLight(col: Color, changeInLight: Float): Color {
     val hsl = floatArrayOf(0f, 0f, 0f)
@@ -28,63 +52,30 @@ fun adjustLight(col: Color, changeInLight: Float): Color {
     return Color(ColorUtils.HSLToColor(hsl))
 }
 
+@Preview(wallpaper = Wallpapers.BLUE_DOMINATED_EXAMPLE)
+@Composable
+private fun SurfaceColorsPreview(modifier: Modifier = Modifier) {
+    PromtuzTheme(true) {
+        val colors = MaterialTheme.colorScheme
 
-data class OutlinedFormElementColorGroup(
-    val borderColor: Color,
-    val labelColor: Color
-)
-
-data class OutlinedFormElementColors(
-    val unfocused: OutlinedFormElementColorGroup,
-    val focused: OutlinedFormElementColorGroup,
-    val error: OutlinedFormElementColorGroup,
-    val disabled: OutlinedFormElementColorGroup,
-)
+        Row(Modifier.fillMaxWidth()) {
+            ColoredBox(colors.primary, "PRIMARY")
+            ColoredBox(colors.secondary, "SECONDARY")
+            ColoredBox(colors.tertiary, "TERTIARY")
+        }
+    }
+}
 
 
 @Composable
-fun outlinedFormElementsColors(): OutlinedFormElementColors {
-    return if (isSystemInDarkTheme()) {
-        val baseColor = MaterialTheme.colorScheme.background
-        val errorColor = MaterialTheme.colorScheme.errorContainer
-        OutlinedFormElementColors(
-            OutlinedFormElementColorGroup(
-                adjustLight(baseColor, 0.3f),
-                adjustLight(baseColor, 0.5f)
-            ),
-            OutlinedFormElementColorGroup(
-                adjustLight(baseColor, 0.5f),
-                adjustLight(baseColor, 0.6f)
-            ),
-            OutlinedFormElementColorGroup(
-                adjustLight(errorColor, 0.3f),
-                adjustLight(errorColor, 0.4f)
-            ),
-            OutlinedFormElementColorGroup(
-                adjustLight(baseColor, 0.3f).copy(0.75f),
-                adjustLight(baseColor, 0.4f).copy(0.75f)
-            )
-        )
-    } else {
-        val baseColor = MaterialTheme.colorScheme.primary
-        val errorColor = MaterialTheme.colorScheme.errorContainer
-        OutlinedFormElementColors(
-            OutlinedFormElementColorGroup(
-                adjustLight(baseColor, 0.1f),
-                adjustLight(baseColor, 0.2f)
-            ),
-            OutlinedFormElementColorGroup(
-                adjustLight(baseColor, 0f),
-                adjustLight(baseColor, 0f)
-            ),
-            OutlinedFormElementColorGroup(
-                adjustLight(errorColor, 0.1f),
-                adjustLight(errorColor, 0.2f)
-            ),
-            OutlinedFormElementColorGroup(
-                adjustLight(baseColor, 0.3f).copy(0.75f),
-                adjustLight(baseColor, 0.4f).copy(0.75f)
-            )
-        )
+private fun RowScope.ColoredBox(col: Color, label: String) {
+    Box(
+        Modifier
+            .weight(1f)
+            .background(col)
+            .padding(vertical = 18.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelMediumEmphasized)
     }
 }

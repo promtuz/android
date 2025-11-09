@@ -7,47 +7,26 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CheckboxColors
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.input.*
+import androidx.compose.ui.tooling.preview.*
+import androidx.compose.ui.unit.*
+import com.promtuz.chat.R
 import com.promtuz.chat.ui.constants.CHECKBOX
 import com.promtuz.chat.ui.constants.CORNER_RADIUS_RATIO
 import com.promtuz.chat.ui.constants.Tweens
 import com.promtuz.chat.ui.theme.PromtuzTheme
-import com.promtuz.chat.ui.theme.outlinedFormElementsColors
 
 object OutlinedFormElements {
     @Composable
@@ -55,8 +34,8 @@ object OutlinedFormElements {
         modifier: Modifier = Modifier,
         value: String,
         onValueChange: (String) -> Unit,
-        label: String,
-        placeholder: @Composable (() -> Unit)? = null,
+        label: String? = null,
+        placeholder: String? = null,
         leadingIcon: @Composable (() -> Unit)? = null,
         trailingIcon: @Composable (() -> Unit)? = null,
         textStyle: TextStyle = LocalTextStyle.current,
@@ -71,21 +50,30 @@ object OutlinedFormElements {
         keyboardActions: KeyboardActions = KeyboardActions.Default,
         interactionSource: MutableInteractionSource? = null,
     ) {
-        val colors = outlinedFormElementsColors()
+        val colors = MaterialTheme.colorScheme
 
         OutlinedTextField(
             modifier = modifier
                 .fillMaxWidth(),
             value = value,
             onValueChange = onValueChange,
-            label = {
-                Text(
-                    label,
-                    fontWeight = FontWeight.W500
-                )
+            label = label?.let {
+                {
+                    Text(
+                        label,
+                        fontWeight = FontWeight.W500,
+                    )
+                }
             },
             textStyle = textStyle,
-            placeholder = placeholder,
+            placeholder = placeholder?.let {
+                {
+                    Text(
+                        placeholder,
+                        fontWeight = FontWeight.W500
+                    )
+                }
+            },
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
             prefix = prefix,
@@ -98,19 +86,23 @@ object OutlinedFormElements {
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             interactionSource = interactionSource,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedLabelColor = colors.focused.labelColor,
-                focusedBorderColor = colors.focused.borderColor,
-
-                unfocusedLabelColor = colors.unfocused.labelColor,
-                unfocusedBorderColor = colors.unfocused.borderColor,
-
-                errorLabelColor = colors.error.labelColor,
-                errorBorderColor = colors.error.borderColor,
-
-                disabledLabelColor = colors.disabled.labelColor,
-                disabledBorderColor = colors.disabled.borderColor
-            ),
+//            colors = OutlinedTextFieldDefaults.colors(
+//                focusedLabelColor = colors.focused.label,
+//                focusedBorderColor = colors.focused.border,
+//                focusedPlaceholderColor = colors.focused.placeholder,
+//
+//                unfocusedLabelColor = colors.unfocused.label,
+//                unfocusedBorderColor = colors.unfocused.border,
+//                unfocusedPlaceholderColor = colors.unfocused.placeholder,
+//
+//                errorLabelColor = colors.error.label,
+//                errorBorderColor = colors.error.border,
+//                errorPlaceholderColor = colors.error.placeholder,
+//
+//                disabledLabelColor = colors.disabled.label,
+//                disabledBorderColor = colors.disabled.border,
+//                disabledPlaceholderColor = colors.disabled.placeholder
+//            ),
             shape = RoundedCornerShape(16.dp),
             singleLine = true
         )
@@ -124,15 +116,17 @@ object OutlinedFormElements {
         modifier: Modifier = Modifier,
         enabled: Boolean = true
     ) {
-        val colors = outlinedFormElementsColors()
+        val colors = MaterialTheme.colorScheme
 
         val borderColor by animateColorAsState(
-            if (checked) Color.Transparent else colors.unfocused.borderColor,
+            if (checked) Color.Transparent else colors.onSurfaceVariant,
             Tweens.microInteraction()
         )
 
         val backgroundColor by animateColorAsState(
-            if (enabled) if (checked) MaterialTheme.colorScheme.primary else Color.Transparent else colors.disabled.borderColor,
+            if (enabled) if (checked) MaterialTheme.colorScheme.primary else Color.Transparent else colors.onSurfaceVariant.copy(
+                0.75f
+            ),
             Tweens.microInteraction()
         )
 
@@ -166,11 +160,11 @@ object OutlinedFormElements {
                             .fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = "Checked",
-                            modifier = Modifier.size(checkBoxSize * CHECKBOX.ICON_SIZE_RATIO),
-                            tint = checkColor
+                        DrawableIcon(
+                            R.drawable.i_check,
+                            Modifier.size(checkBoxSize * CHECKBOX.ICON_SIZE_RATIO),
+                            "Checked",
+                            checkColor
                         )
                     }
                 }
