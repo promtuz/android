@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import com.promtuz.chat.data.remote.events.ClientEvents
 import com.promtuz.chat.data.remote.realtime.Handshake
 import com.promtuz.chat.security.KeyManager
+import com.promtuz.chat.security.TrustManager
 import com.promtuz.chat.utils.serialization.AppCbor
 import com.promtuz.core.Crypto
 import com.promtuz.core.Info
@@ -92,10 +93,10 @@ class QuicClient(private val keyManager: KeyManager, private val crypto: Crypto)
         try {
             connection?.close(1001, "Reinitiating Connection")
             val conn = QuicClientConnection.newBuilder()
+                .customTrustManager(TrustManager.pinned(context))
                 .version(QuicConnection.QuicVersion.V1)
                 .uri(URI("https://${addr.first}:${addr.second}"))
                 .applicationProtocol("ProtoCall")
-                .noServerCertificateCheck()
                 .maxIdleTimeout(Duration.ofHours(1))
                 .build()
 
