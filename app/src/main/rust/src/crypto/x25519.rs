@@ -1,4 +1,4 @@
-use common::{get_ephemeral_keypair, get_shared_key};
+use libcore::{get_ephemeral_keypair, get_shared_key};
 use jni::{
     JNIEnv,
     objects::{JByteArray, JClass, JObject, JString, JValue},

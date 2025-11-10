@@ -1,4 +1,4 @@
-use common::EphemeralSecret;
+use libcore::EphemeralSecret;
 use jni::{
     JNIEnv,
     objects::{JByteArray, JClass},

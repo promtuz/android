@@ -1,4 +1,4 @@
-use common::{EncryptedData, decrypt_data, encrypt_data};
+use libcore::{EncryptedData, decrypt_data, encrypt_data};
 use jni::{
     JNIEnv,
     objects::{JByteArray, JClass, JObject},

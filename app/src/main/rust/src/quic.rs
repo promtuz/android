@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use common::frame_packet;
+use libcore::frame_packet;
 use jni::objects::{JObject, JValue};
 use jni::{
     JNIEnv,
@@ -33,7 +33,7 @@ fn get_client_config(roots: RootCertStore) -> Result<ClientConfig, Box<dyn std::
     };
 
     // Set ALPN to match your server
-    client_crypto.alpn_protocols = common::quic::ALPN_PROTOCALL
+    client_crypto.alpn_protocols = libcore::quic::ALPN_PROTOCALL
         .iter()
         .map(|p| (*p).into())
         .collect(); // Match your server's ALPN

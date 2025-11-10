@@ -8,7 +8,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 android_logger = "0.15"
-common = { path = "../../../../../common/" }
+libcore = { path = "../../../../../libcore" }
 jni = "0.21.1"
 log = "0.4.28"
 once_cell = "1.21.3"

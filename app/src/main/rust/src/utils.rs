@@ -1,4 +1,4 @@
-use common::{PublicKey, StaticSecret};
+use libcore::{PublicKey, StaticSecret};
 use jni::{
     JNIEnv,
     objects::{JByteArray, JValue},

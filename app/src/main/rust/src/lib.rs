@@ -1,4 +1,4 @@
-use common::get_static_keypair;
+use libcore::get_static_keypair;
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JObject, JValue};
