@@ -2,7 +2,7 @@ package com.promtuz.chat.data.remote.events
 
 import com.promtuz.chat.data.remote.dto.Bytes
 import com.promtuz.chat.data.remote.dto.CaptchaRequest
-import com.promtuz.rust.EncryptedData
+import com.promtuz.core.EncryptedData
 import kotlinx.serialization.Serializable
 
 object Server {

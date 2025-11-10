@@ -1,4 +1,4 @@
-package com.promtuz.rust
+package com.promtuz.core
 
 import com.promtuz.chat.data.remote.dto.Bytes
 import kotlinx.serialization.Serializable
@@ -22,6 +22,8 @@ class Crypto : KoinComponent {
         // Forces Dependency on Core
         inject<Core>()
     }
+
+    external fun getStaticKeypair(): Pair<ByteArray, ByteArray>
 
     /**
      * returns the pointer to `EphemeralSecret Key` and `Ephemeral Public Key Bytes`

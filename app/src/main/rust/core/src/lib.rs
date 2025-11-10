@@ -2,12 +2,12 @@
 //!
 //!
 //! for eg.
-//! `getStaticKey` method on class `Core` at package `com.promtuz.rust`
-//! will have name `Java_com_promtuz_rust_Core_getStaticKey``
+//! `getStaticKey` method on class `Crypto` at package `com.promtuz.core`
+//! will have name `Java_com_promtuz_core_Crypto_getStaticKey``
 //!
 //! for eg.
 //! ```rs
-//! #[jni(base = "com.promtuz.rust", class = "Core")]
+//! #[jni(base = "com.promtuz.core", class = "Crypto")]
 //! pub extern "C" fn getStaticKey(
 //!   mut env: JNIEnv,
 //!   _class: JClass,
@@ -17,33 +17,19 @@
 //! }
 //! ```
 
-use jni::JNIEnv;
-use jni::objects::{JClass, JObject, JValue};
-use jni::sys::jobject;
-
-use crate::utils::get_pair_object;
+use jni::{JNIEnv, objects::JClass};
+use macros::jni;
 pub mod utils;
 pub mod crypto;
 
-use libcore::get_static_keypair;
-use macros::jni;
-
-#[jni(base = "com.promtuz.rust", class = "Core")]
-pub extern "C" fn getStaticKeypair(
-    mut env: JNIEnv, 
-    _class: JClass
-) -> jobject {
-    let (secret, public) = get_static_keypair();
-
-    let secret_bytes = secret.to_bytes();
-    let public_bytes = public.to_bytes();
-
-    let secret_jarray = env.byte_array_from_slice(&secret_bytes).unwrap();
-    let public_jarray = env.byte_array_from_slice(&public_bytes).unwrap();
-
-    get_pair_object(
-        &mut env,
-        JValue::Object(&JObject::from(secret_jarray)),
-        JValue::Object(&JObject::from(public_jarray)),
-    )
+#[jni(base = "com.promtuz.core", class = "Core")]
+pub extern "C" fn initLogger<'local>(
+    _env: JNIEnv<'local>,
+    _class: JClass<'local>,
+) {
+    android_logger::init_once(
+        android_logger::Config::default()
+            .with_max_level(log::LevelFilter::Debug)
+            .with_tag("libcore"),
+    );
 }

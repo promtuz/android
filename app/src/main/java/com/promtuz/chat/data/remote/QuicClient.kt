@@ -9,9 +9,9 @@ import com.promtuz.chat.data.remote.events.ClientEvents
 import com.promtuz.chat.data.remote.realtime.Handshake
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.utils.serialization.AppCbor
-import com.promtuz.rust.Crypto
-import com.promtuz.rust.Info
-import com.promtuz.rust.Salts
+import com.promtuz.core.Crypto
+import com.promtuz.core.Info
+import com.promtuz.core.Salts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException

@@ -11,10 +11,10 @@ import com.promtuz.chat.data.remote.events.eventize
 import com.promtuz.chat.data.remote.framePacket
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.utils.serialization.AppCbor
-import com.promtuz.rust.Crypto
-import com.promtuz.rust.EncryptedData
-import com.promtuz.rust.Info
-import com.promtuz.rust.Salts
+import com.promtuz.core.Crypto
+import com.promtuz.core.EncryptedData
+import com.promtuz.core.Info
+import com.promtuz.core.Salts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext

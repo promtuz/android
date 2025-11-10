@@ -8,7 +8,7 @@ use macros::jni;
 
 use crate::utils::{ToJObject, KeyConversion};
 
-#[jni(base = "com.promtuz.rust", class = "Crypto")]
+#[jni(base = "com.promtuz.core", class = "Crypto")]
 pub extern "C" fn decryptData<'local>(
     env: JNIEnv<'local>,
     _class: JClass,
@@ -38,7 +38,7 @@ pub extern "C" fn decryptData<'local>(
     JByteArray::from(jarray)
 }
 
-#[jni(base = "com.promtuz.rust", class = "Crypto")]
+#[jni(base = "com.promtuz.core", class = "Crypto")]
 pub extern "C" fn encryptData<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass,

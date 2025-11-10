@@ -8,7 +8,7 @@ use macros::jni;
 
 use crate::utils::KeyConversion;
 
-#[jni(base = "com.promtuz.rust", class = "Crypto")]
+#[jni(base = "com.promtuz.core", class = "Crypto")]
 pub extern "C" fn ephemeralDiffieHellman<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass,
@@ -27,7 +27,7 @@ pub extern "C" fn ephemeralDiffieHellman<'local>(
     JByteArray::from(shared_jarray)
 }
 
-#[jni(base = "com.promtuz.rust", class = "Crypto")]
+#[jni(base = "com.promtuz.core", class = "Crypto")]
 pub extern "C" fn diffieHellman<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass,

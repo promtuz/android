@@ -1,4 +1,4 @@
-package com.promtuz.rust
+package com.promtuz.core
 
 
 object Salts {

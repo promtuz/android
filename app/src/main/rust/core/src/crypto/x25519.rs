@@ -1,4 +1,4 @@
-use libcore::{get_ephemeral_keypair, get_shared_key};
+use libcore::{get_ephemeral_keypair, get_shared_key, get_static_keypair};
 use jni::{
     JNIEnv,
     objects::{JByteArray, JClass, JObject, JString, JValue},
@@ -8,7 +8,28 @@ use macros::jni;
 
 use crate::utils::{KeyConversion, get_pair_object};
 
-#[jni(base = "com.promtuz.rust", class = "Crypto")]
+#[jni(base = "com.promtuz.core", class = "Crypto")]
+pub extern "C" fn getStaticKeypair(
+    mut env: JNIEnv, 
+    _class: JClass
+) -> jobject {
+    let (secret, public) = get_static_keypair();
+
+    let secret_bytes = secret.to_bytes();
+    let public_bytes = public.to_bytes();
+
+    let secret_jarray = env.byte_array_from_slice(&secret_bytes).unwrap();
+    let public_jarray = env.byte_array_from_slice(&public_bytes).unwrap();
+
+    get_pair_object(
+        &mut env,
+        JValue::Object(&JObject::from(secret_jarray)),
+        JValue::Object(&JObject::from(public_jarray)),
+    )
+}
+
+
+#[jni(base = "com.promtuz.core", class = "Crypto")]
 pub extern "C" fn getEphemeralKeypair<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
@@ -49,7 +70,7 @@ pub extern "C" fn getEphemeralKeypair<'local>(
     }
 }
 
-#[jni(base = "com.promtuz.rust", class = "Crypto")]
+#[jni(base = "com.promtuz.core", class = "Crypto")]
 pub extern "C" fn deriveSharedKey<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass,
