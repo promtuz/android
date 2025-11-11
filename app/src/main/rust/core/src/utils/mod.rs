@@ -3,7 +3,7 @@ use jni::{
     objects::{JByteArray, JValue},
     sys::jobject,
 };
-use libcore::{PublicKey, StaticSecret, encrypt::Encrypted};
+use common::{PublicKey, StaticSecret, encrypt::Encrypted};
 
 pub fn get_pair_object(env: &mut JNIEnv, first: JValue, second: JValue) -> jobject {
     let pair_class = env

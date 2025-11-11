@@ -3,7 +3,7 @@ use jni::{
     objects::{JByteArray, JClass, JObject},
     sys::jobject,
 };
-use libcore::encrypt::Encrypted;
+use common::encrypt::Encrypted;
 use macros::jni;
 
 use crate::utils::{ToJObject, KeyConversion};
