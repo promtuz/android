@@ -1,4 +1,4 @@
-use common::{get_ephemeral_keypair, get_shared_key, get_static_keypair};
+use common::crypto::{get_ephemeral_keypair, get_shared_key, get_static_keypair};
 use jni::{
     JNIEnv,
     objects::{JByteArray, JClass, JObject, JString, JValue},
