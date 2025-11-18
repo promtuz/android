@@ -5,15 +5,13 @@ import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import com.promtuz.chat.R
-import com.promtuz.chat.data.remote.dto.ClientResponse
 import com.promtuz.chat.data.remote.dto.ClientResponseDto
-import com.promtuz.chat.data.remote.dto.GetRelays
+import com.promtuz.chat.data.remote.dto.ResolvedRelays
 import com.promtuz.chat.data.remote.realtime.cborDecode
 import com.promtuz.chat.domain.model.ResolverSeeds
 import com.promtuz.chat.presentation.state.ConnectionState
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.security.TrustManager
-import com.promtuz.chat.utils.serialization.AppCbor
 import com.promtuz.core.Crypto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -60,7 +58,7 @@ class QuicClient(
 
     private val log = Timber.tag("QuicClient")
 
-    suspend fun resolve() = withContext(Dispatchers.IO) {
+    suspend fun resolve(): Result<ResolvedRelays> = withContext(Dispatchers.IO) {
         val seeds = context.resources.openRawResource(R.raw.resolver_seeds)
             .readBytes()
             .decodeToString()
@@ -92,21 +90,22 @@ class QuicClient(
                     stream.outputStream.write(getRelays)
                     stream.outputStream.close()
 
-                    val realshi = stream.inputStream.readAllBytes()
-                    val shi = cborDecode<ClientResponseDto>(realshi)
-
-                    log.d("RESPONSE: ${realshi.toHexString()}")
-                    log.d("RESPONSE: $shi")
+                    val bytes = stream.inputStream.readAllBytes()
+                    val res = cborDecode<ClientResponseDto>(bytes)
 
                     conn.close()
 
-                    break // break
+                    if (res != null) {
+                        return@withContext Result.success(res.content)
+                    }
                 } catch (e: Exception) {
                     _status.value = ConnectionState.Failed
                     log.e(e, "Failed to Resolve")
+                    return@withContext Result.failure(e)
                 }
             }
         }
+        return@withContext Result.failure(Throwable("N0_RELAYS_FOR_YA"))
     }
 
 //    suspend fun connect(addr: InetSocketAddress): Result<Connection> =

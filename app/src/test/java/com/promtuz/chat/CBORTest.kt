@@ -1,8 +1,7 @@
 package com.promtuz.chat
 
-import com.promtuz.chat.data.remote.dto.ClientResponse
 import com.promtuz.chat.data.remote.dto.ClientResponseDto
-import com.promtuz.chat.data.remote.dto.GetRelays
+import com.promtuz.chat.data.remote.dto.ResolvedRelays
 import com.promtuz.chat.data.remote.realtime.cborDecode
 import com.promtuz.chat.utils.serialization.AppCbor
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -17,7 +16,7 @@ class CBORTest {
 
     @Test
     fun testToEmptyRelays() {
-        val emptyRelays = ClientResponseDto(GetRelays(emptyList()))
+        val emptyRelays = ClientResponseDto(ResolvedRelays(emptyList()))
         val emptyRelaysCbor = AppCbor.instance.encodeToByteArray(emptyRelays)
 
         assertContentEquals(
@@ -32,7 +31,7 @@ class CBORTest {
         val emptyRelays = cborDecode<ClientResponseDto>(emptyRelaysCbor)
 
         assertEquals(
-            ClientResponseDto(GetRelays(emptyList())),
+            ClientResponseDto(ResolvedRelays(emptyList())),
             emptyRelays
         )
     }

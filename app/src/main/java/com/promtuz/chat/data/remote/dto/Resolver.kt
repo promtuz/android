@@ -9,14 +9,14 @@ sealed interface ClientResponse
 
 @Serializable
 @SerialName("GetRelays")
-data class GetRelays(
+data class ResolvedRelays(
     val relays: List<RelayDescriptor>
 ) : ClientResponse
 
 @Serializable
 data class ClientResponseDto(
     @SerialName("GetRelays")
-    val content: GetRelays
+    val content: ResolvedRelays
 )
 
 
