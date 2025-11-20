@@ -25,7 +25,7 @@ val dummyMessages = listOf(
     DummyMessage(randId(), "It's a combination of factors including architecture, training data, and optimization techniques", false, relativeTime(-1000 * 60 * 30)),
     DummyMessage(randId(), "How does machine learning actually work?", true, relativeTime(-1000 * 60 * 35)),
     DummyMessage(randId(), "Even tho i saw some bootcamps on youtube, i cant get it right", true, relativeTime(-1000 * 60 * 38)),
-    DummyMessage(randId(), "I've been really curious about AI lately", true, relativeTime(-1000 * 60 * 40)),
+    DummyMessage(randId(), "Crazy", true, relativeTime(-1000 * 60 * 40)),
     DummyMessage(randId(), "That's awesome! Congratulations! 🎉", false, relativeTime(-1000 * 60 * 45)),
     DummyMessage(randId(), "Just got promoted at work!", true, relativeTime(-1000 * 60 * 50)),
     DummyMessage(randId(), "Not much, just the usual. You?", false, relativeTime(-1000 * 60 * 55)),

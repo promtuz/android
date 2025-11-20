@@ -1,6 +1,8 @@
 package com.promtuz.chat.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -30,8 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
@@ -47,6 +53,7 @@ fun ChatBottomBar(haze: HazeState, interactionSource: MutableInteractionSource) 
     val colors = MaterialTheme.colorScheme
     val textStyle = MaterialTheme.typography
     val windowInfo = LocalWindowInfo.current
+    val resources = LocalResources.current
 
     var message by remember { mutableStateOf("") }
 
@@ -54,20 +61,35 @@ fun ChatBottomBar(haze: HazeState, interactionSource: MutableInteractionSource) 
 
     val hazeStyle = HazeStyle(
         colors.surface,
-        HazeTint(colors.surface.copy(0.9f)),
-        48.dp,
+        HazeTint(colors.surface.copy(0.5f)),
+        26.dp,
         0f
     )
 
+    val editorTextSize = 16.5.sp
+    val base = MaterialTheme.colorScheme.background
+    val editorShape = RoundedCornerShape(20.dp)
+
     Row(
         Modifier
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Transparent,
+                        base.copy(alpha = 0.2f),
+                        base.copy(alpha = 0.5f),
+                        base.copy(alpha = 0.85f),
+                        base.copy(alpha = 0.95f)
+                    )
+                )
+            )
             .fillMaxWidth()
-            .hazeEffect(haze, hazeStyle)
             .height(IntrinsicSize.Min)
             .padding(12.dp, 0.dp, 12.dp, 4.dp)
-            // TODO: (elegantly) toggle inset bottom padding along with soft keyboard
             .padding(bottom = insetsPadding.calculateBottomPadding())
-            .clip(RoundedCornerShape(20.dp))
+            .clip(editorShape)
+            .border(BorderStroke(Dp.Hairline, colors.surfaceContainerHighest), editorShape)
+            .hazeEffect(haze, hazeStyle)
             .background(colors.surfaceContainerHighest.copy(0.6f))
             .padding(4.dp)
             .heightIn(max = 0.25f * windowInfo.containerDpSize.height)
@@ -77,19 +99,19 @@ fun ChatBottomBar(haze: HazeState, interactionSource: MutableInteractionSource) 
                 value = message,
                 onValueChange = { message = it },
                 cursorBrush = SolidColor(colors.primary),
-                textStyle = textStyle.bodyLargeEmphasized.copy(colors.onSurface, 18.sp),
+                textStyle = textStyle.bodyLargeEmphasized.copy(colors.onSurface, editorTextSize),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
                 interactionSource = interactionSource
             ) { innerTextField ->
-                Box(Modifier.padding(12.dp, 8.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.padding(8.dp, 5.dp), contentAlignment = Alignment.Center) {
                     Box(Modifier.fillMaxWidth()) {
                         if (message.isEmpty()) Text(
                             "Message",
                             style = textStyle.bodyLargeEmphasized.copy(
                                 colors.onSurfaceVariant.copy(0.8f),
-                                18.sp
+                                editorTextSize
                             )
                         )
                         innerTextField()
@@ -101,12 +123,12 @@ fun ChatBottomBar(haze: HazeState, interactionSource: MutableInteractionSource) 
         FilledIconButton(
             onClick = {},
             Modifier
-                .size(46.dp)
+                .size(38.dp)
                 .align(Alignment.Bottom),
             colors = IconButtonDefaults.filledIconButtonColors(colors.primary),
-            shape = RoundedCornerShape(18.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            DrawableIcon(R.drawable.i_send, Modifier.size(20.dp))
+            DrawableIcon(R.drawable.i_send, Modifier.size(17.5.dp))
         }
     }
 }

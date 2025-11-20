@@ -1,10 +1,12 @@
 package com.promtuz.chat.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.unit.*
 import com.promtuz.chat.domain.model.UiMessage
@@ -25,17 +27,24 @@ fun MessageBubble(message: UiMessage) {
 
     BoxWithConstraints {
         Box(Modifier.height(IntrinsicSize.Min)) {
-            Box(Modifier
-                .fillMaxSize()
-                .clickable {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .combinedClickable(
+                        indication = null,
+                        interactionSource = null,
+                        onClick = {},
+                        onLongClick = {
 
-                }) {
+                        }
+                    )
+            ) {
             }
             Row(
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 18.dp)
-                    .padding(top = if (haveTopMargin) 4.dp else 0.dp),
+                    .padding(top = if (haveTopMargin) 2.dp else 0.dp),
                 horizontalArrangement = if (message.isSent) Arrangement.End else Arrangement.Start,
             ) {
                 Box(
@@ -44,11 +53,21 @@ fun MessageBubble(message: UiMessage) {
                         .drawBehind {
                             val cornerRadius = 14.dp
 
-                            composeBubble(containerColor, cornerRadius, message.isSent, showTail)
+                            composeBubble(
+                                containerColor,
+                                17.dp to 6.dp,
+                                message.isSent,
+                                message.position
+                            )
                         }
-                        .padding(10.dp, 6.dp)
+                        .padding(10.dp, 5.dp)
                 ) {
-                    Text(message.content, style = textStyle.bodyLargeEmphasized)
+                    Text(
+                        message.content,
+                        style = textStyle.bodyLargeEmphasized.copy(
+                            lineHeight = 20.0.sp
+                        )
+                    )
                 }
             }
         }

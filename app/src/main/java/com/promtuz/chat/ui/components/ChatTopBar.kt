@@ -76,6 +76,6 @@ fun ChatTopBar(chat: Chat, haze: HazeState) {
                 DrawableIcon(R.drawable.i_ellipsis_vertical)
             }
         },
-        colors = chatBarColors
+        colors = chatBarColors,
     )
 }
