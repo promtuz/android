@@ -49,7 +49,8 @@ class AppVM(
 
     private suspend fun connectToRelay(relay: RelayDescriptor): Result<Unit> =
         withContext(Dispatchers.IO) {
-            quicClient.connect(relay.addr)
-            Result.success(Unit)
+            quicClient.connect(relay).map { conn ->
+                // prolly create some handler class instance using conn & save it inside vm
+            }
         }
 }

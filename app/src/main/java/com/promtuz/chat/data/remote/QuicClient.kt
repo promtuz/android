@@ -8,6 +8,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import com.promtuz.chat.R
 import com.promtuz.chat.data.remote.dto.ClientResponseDto
+import com.promtuz.chat.data.remote.dto.RelayDescriptor
 import com.promtuz.chat.data.remote.dto.ResolvedRelays
 import com.promtuz.chat.data.remote.realtime.cborDecode
 import com.promtuz.chat.domain.model.ResolverSeeds
@@ -80,9 +81,7 @@ class QuicClient(
                     val conn = QuicClientConnection.newBuilder()
                         .customTrustManager(TrustManager.pinned(context))
                         .version(QuicConnection.QuicVersion.V1)
-                        // FIXME: gotta add an option to add separate "serverName" in tls
-                        //  for eg.
-                        //  .serverName(<RELAY_ID>)
+                        .serverName(seed.id)
                         .uri(URI("https://${seed.host}:${seed.port}"))
                         .applicationProtocol("client/$PROTOCOL_VERSION").build()
 
@@ -115,7 +114,7 @@ class QuicClient(
         return@withContext Result.failure(Throwable("N0_RELAYS_FOR_YA"))
     }
 
-    suspend fun connect(addr: InetSocketAddress): Result<QuicClientConnection> = withContext(
+    suspend fun connect(relay: RelayDescriptor): Result<QuicClientConnection> = withContext(
         Dispatchers.IO
     ) {
         if (!hasInternetConnectivity(context)) return@withContext Result.failure(Throwable("No Internet"))
@@ -127,7 +126,8 @@ class QuicClient(
             val conn =
                 QuicClientConnection.newBuilder().customTrustManager(TrustManager.pinned(context))
                     .version(QuicConnection.QuicVersion.V1)
-                    .uri(URI("https://${addr.hostName}:${addr.port}"))
+                    .serverName(relay.id)
+                    .uri(URI("https://${relay.addr.hostName}:${relay.addr.port}"))
                     .applicationProtocol("client/$PROTOCOL_VERSION").build()
             conn.connect()
 
@@ -141,6 +141,8 @@ class QuicClient(
             Result.success(conn)
         } catch (e: Exception) {
             setState(ConnState.Failed)
+
+            log.e(e, "Failed to Connect")
 
             return@withContext Result.failure(e)
         }

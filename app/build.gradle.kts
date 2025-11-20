@@ -148,7 +148,9 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.compose.navigation)
 
-    implementation(libs.kwik)
+//    implementation(libs.kwik)
+
+    implementation("tech.kwik:kwik")
 
     implementation(libs.msgpack.core)
 
