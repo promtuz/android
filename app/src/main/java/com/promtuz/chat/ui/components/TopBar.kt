@@ -20,6 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +47,10 @@ import com.promtuz.chat.ui.constants.Tweens
 import com.promtuz.chat.ui.text.calSansfamily
 import com.promtuz.chat.ui.theme.gradientScrim
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import com.promtuz.chat.presentation.state.ConnectionState as CS
@@ -57,30 +61,32 @@ import com.promtuz.chat.presentation.state.ConnectionState as CS
 fun TopBar(appViewModel: AppVM, quicClient: QuicClient = koinInject()) {
     val context = LocalContext.current
     val staticTitle = stringResource(R.string.app_name)
-    var dynamicTitle by remember { mutableStateOf(staticTitle) }
+    val dynamicTitle = remember { MutableStateFlow(staticTitle) }
     var job by remember { mutableStateOf<Job?>(null) }
     val menuExpanded = remember { mutableStateOf(false) }
 
     LaunchedEffect(quicClient) {
         snapshotFlow { quicClient.status.value }.collect { newStatus ->
-            dynamicTitle = when (newStatus) {
-                CS.Idle -> staticTitle
+            dynamicTitle.emit(
+                when (newStatus) {
+                    CS.Idle -> staticTitle
 
-                CS.Connecting, CS.Failed, CS.Handshaking, CS.Reconnecting, CS.Resolving, CS.Offline -> context.getString(
-                    newStatus.text
-                )
+                    CS.Connecting, CS.Failed, CS.Handshaking, CS.Reconnecting, CS.Resolving, CS.Offline -> context.getString(
+                        newStatus.text
+                    )
 
-                CS.Connected -> {
-                    context.getString(newStatus.text).also {
-                        job = launch {
-                            delay(1200)
-                            if (quicClient.status.value == CS.Connected) {
-                                dynamicTitle = staticTitle
+                    CS.Connected -> {
+                        context.getString(newStatus.text).also {
+                            job?.cancel()
+                            job = launch {
+                                delay(1200)
+                                if (quicClient.status.value == CS.Connected) {
+                                    dynamicTitle.emit(staticTitle)
+                                }
                             }
                         }
                     }
-                }
-            }
+                })
         }
     }
 
@@ -97,28 +103,30 @@ fun TopBar(appViewModel: AppVM, quicClient: QuicClient = koinInject()) {
             )
         },
         title = {
-            AnimatedContent(
-                dynamicTitle,
-                modifier = Modifier
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center,
-                transitionSpec = {
-                    (slideInVertically(
-                        initialOffsetY = { fullHeight -> fullHeight },
-                        animationSpec = Tweens.microInteraction(300)
-                    ) + fadeIn(Tweens.microInteraction(300))) togetherWith (slideOutVertically(
-                        targetOffsetY = { fullHeight -> -fullHeight },
-                        animationSpec = Tweens.microInteraction(300)
-                    ) + fadeOut(Tweens.microInteraction(300)))
-                }) { text ->
-                Text(
-                    text,
-                    fontFamily = calSansfamily,
-                    fontSize = 26.sp,
-                    modifier = Modifier.graphicsLayer { // Allow overflow
-                        clip = false
-                    })
-            }
+            AppBarDynamicTitle(dynamicTitle)
+
+//            AnimatedContent(
+//                dynamicTitle,
+//                modifier = Modifier
+//                    .fillMaxWidth(),
+//                contentAlignment = Alignment.Center,
+//                transitionSpec = {
+//                    (slideInVertically(
+//                        initialOffsetY = { fullHeight -> fullHeight },
+//                        animationSpec = Tweens.microInteraction(300)
+//                    ) + fadeIn(Tweens.microInteraction(300))) togetherWith (slideOutVertically(
+//                        targetOffsetY = { fullHeight -> -fullHeight },
+//                        animationSpec = Tweens.microInteraction(300)
+//                    ) + fadeOut(Tweens.microInteraction(300)))
+//                }) { text ->
+//                Text(
+//                    text,
+//                    fontFamily = calSansfamily,
+//                    fontSize = 26.sp,
+//                    modifier = Modifier.graphicsLayer { // Allow overflow
+//                        clip = false
+//                    })
+//            }
         },
         actions = {
             Box {
