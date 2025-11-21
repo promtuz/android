@@ -10,6 +10,7 @@ import com.promtuz.chat.R
 import com.promtuz.chat.data.remote.dto.ClientResponseDto
 import com.promtuz.chat.data.remote.dto.RelayDescriptor
 import com.promtuz.chat.data.remote.dto.ResolvedRelays
+import com.promtuz.chat.data.remote.dto.bytes
 import com.promtuz.chat.data.remote.proto.HandshakeProto
 import com.promtuz.chat.data.remote.proto.expectChallenge
 import com.promtuz.chat.data.remote.realtime.cborDecode
@@ -138,23 +139,23 @@ class QuicClient(
             val ipk = keyManager.getPublicKey()
             val (esk, epk) = crypto.getEphemeralKeypair()
 
-            val clientHello = HandshakeProto.ClientHello(ipk.asList(), epk.asList())
+            val clientHello = HandshakeProto.ClientHello(ipk.bytes(), epk.bytes())
             stream.outputStream.write(clientHello.toBytes())
 
             val challengeBytes = stream.inputStream.readNBytes(0x41) // 65 bytes
             val challenge = HandshakeProto.fromBytes(challengeBytes, true).expectChallenge()
 
-            val dh = crypto.ephemeralDiffieHellman(esk, challenge.epk.toByteArray())
+            val dh = crypto.ephemeralDiffieHellman(esk, challenge.epk.bytes)
             val key = crypto.deriveSharedKey(dh, ByteArray(32) { 0 }, "handshake.challenge.key")
 
             val proof = crypto.decryptData(
-                cipher = challenge.ct.toByteArray(),
+                cipher = challenge.ct.bytes,
                 nonce = ByteArray(12) { 0 },
                 key = key,
-                ad = epk + challenge.epk
+                ad = epk + challenge.epk.bytes
             )
 
-            val clientProof = HandshakeProto.ClientProof(proof.toList())
+            val clientProof = HandshakeProto.ClientProof(proof.bytes())
             stream.outputStream.write(clientProof.toBytes())
 
             val serverResponseBytes = stream.inputStream.readAllBytes()

@@ -9,6 +9,7 @@ import kotlinx.serialization.cbor.ByteString
 @OptIn(ExperimentalSerializationApi::class)
 value class Bytes(@ByteString val bytes: ByteArray)
 
+fun ByteArray.bytes(): Bytes = Bytes(this)
 
 @Serializable
 enum class CaptchaReason {
