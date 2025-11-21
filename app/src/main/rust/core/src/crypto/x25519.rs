@@ -75,10 +75,10 @@ pub extern "system" fn deriveSharedKey<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass,
     raw_key: JByteArray<'local>,
-    salt: JString<'local>,
+    salt: JByteArray<'local>,
     info: JString<'local>,
 ) -> JByteArray<'local> {
-    let salt: String = env.get_string(&salt).unwrap().into();
+    let salt = env.convert_byte_array(salt).unwrap();
     let info: String = env.get_string(&info).unwrap().into();
 
     let raw_shared_key_slice = raw_key.to_bytes(&env);

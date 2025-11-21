@@ -11,12 +11,14 @@ import com.promtuz.chat.data.remote.dto.ClientResponseDto
 import com.promtuz.chat.data.remote.dto.RelayDescriptor
 import com.promtuz.chat.data.remote.dto.ResolvedRelays
 import com.promtuz.chat.data.remote.dto.bytes
+import com.promtuz.chat.data.remote.proto.HandshakeEnvelope
 import com.promtuz.chat.data.remote.proto.HandshakeProto
-import com.promtuz.chat.data.remote.proto.expectChallenge
 import com.promtuz.chat.data.remote.realtime.cborDecode
 import com.promtuz.chat.domain.model.ResolverSeeds
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.security.TrustManager
+import com.promtuz.chat.utils.network.PacketReader
+import com.promtuz.chat.utils.serialization.toCbor
 import com.promtuz.core.Crypto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,6 +32,9 @@ import com.promtuz.chat.presentation.state.ConnectionState as ConnState
 
 private const val PROTOCOL_VERSION = 1
 
+/**
+ * Uses BigEndian btw
+ */
 fun u32size(len: Int): ByteArray {
     val size: UInt = len.toUInt()
     val sizeBytes = ByteArray(4)
@@ -135,45 +140,62 @@ class QuicClient(
             // HANDSHAKE BEGIN
 
             val stream = conn.createStream(true)
+            val reader = PacketReader(stream.inputStream)
 
             val ipk = keyManager.getPublicKey()
             val (esk, epk) = crypto.getEphemeralKeypair()
 
             val clientHello = HandshakeProto.ClientHello(ipk.bytes(), epk.bytes())
-            stream.outputStream.write(clientHello.toBytes())
+            stream.outputStream.write(framePacket(clientHello.toCbor()))
 
-            val challengeBytes = stream.inputStream.readNBytes(0x41) // 65 bytes
-            val challenge = HandshakeProto.fromBytes(challengeBytes, true).expectChallenge()
+            val challengeBytes = reader.readPacket()
+            val challenge =
+                cborDecode<HandshakeEnvelope>(challengeBytes)?.ServerChallenge
+                    ?: error("Unexpected Server Message")
+
+            println("CHALLENGE : $challenge")
 
             val dh = crypto.ephemeralDiffieHellman(esk, challenge.epk.bytes)
+
+            log.d("DH ${dh.toHexString()}")
+
             val key = crypto.deriveSharedKey(dh, ByteArray(32) { 0 }, "handshake.challenge.key")
+
+            log.d("Derived DH Key ${key.toHexString()}")
+
+            val ad = epk + challenge.epk.bytes
+
 
             val proof = crypto.decryptData(
                 cipher = challenge.ct.bytes,
                 nonce = ByteArray(12) { 0 },
                 key = key,
-                ad = epk + challenge.epk.bytes
+                ad
             )
 
             val clientProof = HandshakeProto.ClientProof(proof.bytes())
-            stream.outputStream.write(clientProof.toBytes())
+            stream.outputStream.write(framePacket(clientProof.toCbor()))
 
-            val serverResponseBytes = stream.inputStream.readAllBytes()
 
-            when (val serverResponse = HandshakeProto.fromBytes(serverResponseBytes, true)) {
-                is HandshakeProto.ServerAccept -> {
-                    log.d("Server Accepted at : ${serverResponse.timestamp}")
+            val responseBytes = reader.readPacket()
+            val envelope = cborDecode<HandshakeEnvelope>(responseBytes)
+                ?: error("Invalid or empty envelope")
 
+            when {
+                envelope.ServerAccept != null -> {
+                    log.d("Server Accepted at : ${envelope.ServerAccept.timestamp}")
                     setState(ConnState.Connected)
                 }
 
-                is HandshakeProto.ServerReject -> {
-                    log.d("Server Rejected with Reason : ${serverResponse.reason}")
+                envelope.ServerReject != null -> {
+                    log.d("Server Rejected with Reason : ${envelope.ServerReject.reason}")
 
                     setState(ConnState.Failed)
                 }
 
-                else -> error("Unknown Server Response")
+                else -> {
+                    error("Unexpected message type")
+                }
             }
 
             // HANDSHAKE END

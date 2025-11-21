@@ -1,13 +1,10 @@
 package com.promtuz.chat.data.remote.proto
 
 import com.promtuz.chat.data.remote.dto.Bytes
-import com.promtuz.chat.utils.serialization.CborEnvelope
 import kotlinx.serialization.Serializable
 
-fun bytes(n: Byte) = byteArrayOf(n)
-
 @Serializable
-sealed class HandshakeProto : CborEnvelope {
+sealed class HandshakeProto {
     @Serializable
     data class ClientHello(
         val ipk: Bytes, val epk: Bytes
@@ -34,7 +31,11 @@ sealed class HandshakeProto : CborEnvelope {
     ) : HandshakeProto()
 }
 
-fun HandshakeProto.expectChallenge(): HandshakeProto.ServerChallenge {
-    return this as? HandshakeProto.ServerChallenge
-        ?: error("Expected ServerChallenge")
-}
+@Serializable
+data class HandshakeEnvelope(
+    val ClientHello: HandshakeProto.ClientHello? = null,
+    val ServerChallenge: HandshakeProto.ServerChallenge? = null,
+    val ClientProof: HandshakeProto.ClientProof? = null,
+    val ServerAccept: HandshakeProto.ServerAccept? = null,
+    val ServerReject: HandshakeProto.ServerReject? = null,
+)
