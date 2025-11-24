@@ -15,6 +15,10 @@ object Routes : NavKey {
 
     @Serializable
     data object Settings : NavKey
+
     @Serializable
     data object About : NavKey
+
+    @Serializable
+    data object Logs : NavKey
 }

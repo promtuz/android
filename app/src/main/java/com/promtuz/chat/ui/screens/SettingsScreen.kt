@@ -2,22 +2,33 @@ package com.promtuz.chat.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.*
-import androidx.compose.ui.platform.*
-import androidx.compose.ui.res.*
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavKey
 import com.promtuz.chat.R
+import com.promtuz.chat.navigation.Routes
 import com.promtuz.chat.navigation.goTo
+import com.promtuz.chat.presentation.viewmodel.AppVM
 import com.promtuz.chat.presentation.viewmodel.SettingsVM
 import com.promtuz.chat.ui.activities.ManageSpace
 import com.promtuz.chat.ui.components.FlexibleScreen
@@ -29,11 +40,15 @@ private data class SettingItem(val title: String, val drawableIcon: Int, val onC
 private data class SettingGroup(val name: String, val items: List<SettingItem>)
 
 @Composable
-fun SettingsScreen(viewModel: SettingsVM = koinViewModel()) {
+fun SettingsScreen(
+    appViewModel: AppVM, viewModel: SettingsVM = koinViewModel()
+) {
     val direction = LocalLayoutDirection.current
     val context = LocalContext.current
     val textTheme = MaterialTheme.typography
     val colors = MaterialTheme.colorScheme
+
+    val navigate: (NavKey) -> Unit = { route -> appViewModel.navigator.push(route) }
 
     val settingGroups = remember {
         listOf(
@@ -42,7 +57,9 @@ fun SettingsScreen(viewModel: SettingsVM = koinViewModel()) {
                     SettingItem("Identity & Keys", R.drawable.i_key) {},
                     SettingItem("Privacy & Security", R.drawable.i_shield_lock) {},
                     SettingItem("Blocked Users", R.drawable.i_user_blocked) {},
-                    SettingItem("Storage", R.drawable.i_hard_drive) { context.goTo(ManageSpace::class.java) },
+                    SettingItem(
+                        "Storage", R.drawable.i_hard_drive
+                    ) { context.goTo(ManageSpace::class.java) },
                     SettingItem("Notifications", R.drawable.i_notifications) {},
                 )
             ),
@@ -61,9 +78,14 @@ fun SettingsScreen(viewModel: SettingsVM = koinViewModel()) {
                 )
             ),
             SettingGroup(
+                "Developer", listOf(
+                    SettingItem("App Logs", R.drawable.i_logs) { navigate(Routes.Logs) },
+                )
+            ),
+            SettingGroup(
                 "About", listOf(
-                    SettingItem("App Info", R.drawable.i_info) {},
-                    SettingItem("Open Source Licenses", R.drawable.i_code) {},
+                    SettingItem("App Info", R.drawable.i_info) { navigate(Routes.About) },
+                    SettingItem("Open Source Licenses", R.drawable.i_code) { },
                 )
             ),
         )
@@ -81,9 +103,9 @@ fun SettingsScreen(viewModel: SettingsVM = koinViewModel()) {
                     end = padding.calculateRightPadding(direction),
                     top = 0.dp,
                     bottom = 0.dp
-                ),
-            contentPadding = PaddingValues(18.dp, padding.calculateTopPadding() + 12.dp, 18.dp, 48.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                ), contentPadding = PaddingValues(
+                18.dp, padding.calculateTopPadding() + 12.dp, 18.dp, 48.dp
+            ), verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             for ((title, settings) in settingGroups) {
                 item {
@@ -92,8 +114,7 @@ fun SettingsScreen(viewModel: SettingsVM = koinViewModel()) {
                         Modifier.padding(top = 16.dp, bottom = 3.dp, start = 2.dp),
                         colors.onSurfaceVariant,
                         style = avgSizeInStyle(
-                            textTheme.labelLargeEmphasized,
-                            textTheme.labelMediumEmphasized
+                            textTheme.labelLargeEmphasized, textTheme.labelMediumEmphasized
                         )
                     )
                 }
@@ -108,9 +129,7 @@ fun SettingsScreen(viewModel: SettingsVM = koinViewModel()) {
 
 @Composable
 private fun SettingsGroup(
-    modifier: Modifier = Modifier,
-    setting: SettingItem,
-    groupEntry: Pair<Int, Int>
+    modifier: Modifier = Modifier, setting: SettingItem, groupEntry: Pair<Int, Int>
 ) {
     val (index, groupSize) = groupEntry
 
@@ -138,12 +157,9 @@ private fun SettingsGroup(
             tint = colors.onSurface
         )
         Text(
-            setting.title,
-            style = avgSizeInStyle(
-                textTheme.labelLargeEmphasized,
-                textTheme.bodyLargeEmphasized, 0.75f
-            ),
-            color = colors.onBackground
+            setting.title, style = avgSizeInStyle(
+                textTheme.labelLargeEmphasized, textTheme.bodyLargeEmphasized, 0.75f
+            ), color = colors.onBackground
         )
     }
 }

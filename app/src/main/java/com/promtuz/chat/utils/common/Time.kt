@@ -5,6 +5,17 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+class Time {
+
+    companion object {
+        private val simpleDateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm:ss", Locale.ENGLISH)
+
+        private fun tsToDate(ts: Long): Date = Date(ts)
+
+        fun getDateString(time: Long): String = simpleDateFormat.format(tsToDate(time * 1000L))
+        fun getDateString(time: ULong): String = getDateString(time.toLong())
+    }
+}
 
 fun parseMessageDate(timestamp: Long, full: Boolean = true): String {
     val date = Date(timestamp)

@@ -14,6 +14,7 @@ import com.promtuz.chat.ui.constants.Naviganimation
 import com.promtuz.chat.ui.screens.AboutScreen
 import com.promtuz.chat.ui.screens.ChatScreen
 import com.promtuz.chat.ui.screens.HomeScreen
+import com.promtuz.chat.ui.screens.LogsScreen
 import com.promtuz.chat.ui.screens.SavedUsersScreen
 import com.promtuz.chat.ui.screens.SettingsScreen
 
@@ -37,8 +38,9 @@ fun AppNavigation(
             entry<Routes.App> { HomeScreen(appViewModel) }
             //entry<Routes.Chat> { key -> ChatScreen(appViewModel) }
             entry<Routes.SavedUsers> { SavedUsersScreen() }
-            entry<Routes.Settings> { SettingsScreen() }
+            entry<Routes.Settings> { SettingsScreen(appViewModel) }
             entry<Routes.About> { AboutScreen() }
+            entry<Routes.Logs> { LogsScreen() }
         },
         sizeTransform = SizeTransform(clip = false),
         transitionSpec = { Naviganimation.transitionSpec() },

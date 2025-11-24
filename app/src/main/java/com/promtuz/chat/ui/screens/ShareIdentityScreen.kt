@@ -2,21 +2,37 @@ package com.promtuz.chat.ui.screens
 
 import android.content.Intent
 import androidx.camera.core.ExperimentalGetImage
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.*
-import androidx.compose.ui.platform.*
-import androidx.compose.ui.res.*
-import androidx.compose.ui.text.style.*
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.promtuz.chat.R
 import com.promtuz.chat.presentation.viewmodel.ShareIdentityVM
 import com.promtuz.chat.ui.activities.QrScanner
+import com.promtuz.chat.ui.components.BackTopBar
 import com.promtuz.chat.ui.components.IdentityQrCode
-import com.promtuz.chat.ui.components.SimpleScreen
 import dev.shreyaspatil.capturable.capturable
 import dev.shreyaspatil.capturable.controller.rememberCaptureController
 
@@ -30,28 +46,36 @@ fun ShareIdentityScreen(
     val captureController = rememberCaptureController()
     val colors = MaterialTheme.colorScheme
 
-    SimpleScreen("Share Identity Key") {
-        Column(
-            Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(48.dp, Alignment.CenterVertically)
+    Scaffold(
+        topBar = { BackTopBar("Share Identity Key") }) { innerPadding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(colors.background),
         ) {
-            Box(
-                Modifier
-                    .wrapContentSize()
-                    .align(Alignment.CenterHorizontally)
-                    .capturable(captureController)
-            ) {
-                publicIdentity?.let { IdentityQrCode(it) }
-            }
             Column(
-                Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(48.dp, Alignment.CenterVertically)
             ) {
-                ShareQRButton {
-                    viewModel.shareQrCode(captureController) { context.startActivity(it) }
+                Box(
+                    Modifier
+                        .wrapContentSize()
+                        .align(Alignment.CenterHorizontally)
+                        .capturable(captureController)
+                ) {
+                    publicIdentity?.let { IdentityQrCode(it) }
                 }
-                ScanQRButton()
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ShareQRButton {
+                        viewModel.shareQrCode(captureController) { context.startActivity(it) }
+                    }
+                    ScanQRButton()
+                }
             }
         }
     }

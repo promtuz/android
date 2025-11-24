@@ -29,24 +29,21 @@ object Buttonimations {
     }
 }
 
-
 object Naviganimation {
-    private val enterEase = CubicBezierEasing(0.0f, 0.8f, 0.2f, 1.0f)
-    private val exitEase = CubicBezierEasing(0.0f, 0.8f, 0.2f, 0.8f)
-    private val initialExit = CubicBezierEasing(0.8f, 0.25f, 0.25f, 1.0f)
+    private val enter = CubicBezierEasing(0.2f, 0.8f, 0.2f, 1f)
+    private val exit = CubicBezierEasing(0.2f, 0.8f, 0.2f, 0.9f)
 
     fun transitionSpec() = ContentTransform(
-        fadeIn(tween(350, 0, enterEase)) + slideInHorizontally(tween(500, 0, enterEase)) { it / 4 },
-        fadeOut(tween(300, 0, exitEase))
+        targetContentEnter = fadeIn(tween(500, easing = enter)) +
+                slideInHorizontally(tween(500, easing = enter)) { it / 4 },
+        initialContentExit = fadeOut(tween(500, easing = exit)) +
+                slideOutHorizontally(tween(500, easing = exit)) { -it / 4 }
     )
 
     fun popTransitionSpec() = ContentTransform(
-        fadeIn(tween(300, 0, exitEase)),
-        fadeOut(tween(350, 0, initialExit)) + slideOutHorizontally(
-            tween(
-                350,
-                0,
-                initialExit
-            )
-        ) { (it * 0.75f).toInt() })
+        targetContentEnter = fadeIn(tween(450, easing = exit)) +
+                slideInHorizontally(tween(450, easing = exit)) { -(it * 0.75f).toInt() },
+        initialContentExit = fadeOut(tween(450, easing = enter)) +
+                slideOutHorizontally(tween(450, easing = enter)) { (it * 0.75f).toInt() }
+    )
 }

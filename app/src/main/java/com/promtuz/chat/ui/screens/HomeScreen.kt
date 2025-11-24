@@ -46,11 +46,6 @@ fun HomeScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val navigator = appViewModel.navigator
 
-    LaunchedEffect(drawerState.currentOffset) {
-        Timber.tag("HomeDrawer")
-            .d("${drawerState.isAnimationRunning} ; ${drawerState.currentOffset}")
-    }
-
     Scaffold(
         topBar = { TopBar(appViewModel) },
         floatingActionButton = {
