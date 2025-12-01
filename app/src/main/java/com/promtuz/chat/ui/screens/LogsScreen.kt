@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.promtuz.chat.R
 import com.promtuz.chat.ui.components.SimpleScreen
+import com.promtuz.chat.utils.extensions.then
 import com.promtuz.chat.utils.logs.AppLog
 import com.promtuz.chat.utils.logs.AppLogger
 import java.text.SimpleDateFormat
@@ -72,8 +72,11 @@ fun LogsScreen() {
                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .horizontalScroll(rememberScrollState(), enabled = !wrappingText)
-                .padding(8.dp, 10.dp),
+                .padding(8.dp, 10.dp)
+                .let {
+                    if (wrappingText) it.horizontalScroll(rememberScrollState())
+                    else it
+                },
             verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
             reverseLayout = true
         ) {

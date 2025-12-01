@@ -7,20 +7,21 @@ import android.widget.Toast
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.promtuz.chat.data.local.entities.User
 import com.promtuz.chat.data.repository.UserRepository
-import com.promtuz.chat.domain.model.Identity
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.utils.media.ImageUtils
 import com.promtuz.chat.utils.serialization.AppCbor
 import com.promtuz.core.Crypto
 import dev.shreyaspatil.capturable.controller.CaptureController
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToByteArray
+import java.net.InetSocketAddress
 
 @Serializable
 data class TempIdentity(
@@ -46,18 +47,30 @@ class ShareIdentityVM(
 
     private lateinit var keyPair: Pair<ByteArray, ByteArray>
 
-    fun init() {
+    suspend fun init() = coroutineScope {
         keyPair = crypto.getStaticKeypair()
+
+        val relayAddr = appVM.conn?.serverAddress
+            ?: waitForRelay()
 
         val verifyKey = keyManager.getSecretKey().toSigningKey().getVerificationKey()
         val publicKey = keyManager.getPublicKey()
-        val relayAddr = appVM.conn?.serverAddress
 
         val identity = TempIdentity(
-            publicKey, keyPair.second, verifyKey, relayAddr?.let { "${it.hostString}:${it.port}" })
+            publicKey,
+            keyPair.second,
+            verifyKey,
+            "${relayAddr.hostString}:${relayAddr.port}"
+        )
 
-        val cbor = AppCbor.instance
-        _qrData.value = cbor.encodeToByteArray(identity)
+        _qrData.value = AppCbor.instance.encodeToByteArray(identity)
+    }
+
+    private suspend fun waitForRelay(): InetSocketAddress {
+        while (true) {
+            appVM.conn?.serverAddress?.let { return it }
+            delay(100) // non-blocking wait
+        }
     }
 
     init {

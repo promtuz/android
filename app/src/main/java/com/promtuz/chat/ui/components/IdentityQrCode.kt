@@ -46,10 +46,9 @@ fun IdentityQrCode(
             .padding(32.dp)
             .aspectRatio(1f)
     ) {
-        AnimatedVisibility(loading) {
+        AnimatedVisibility(loading, Modifier.align(Alignment.Center)) {
             LoadingIndicator(
                 Modifier
-                    .align(Alignment.Center)
                     .fillMaxSize(0.4f)
             )
         }
