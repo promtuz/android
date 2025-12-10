@@ -2,8 +2,10 @@
   "seeds": [
     {
       "id": "I2DRYSCOMXODBJ47",
-      "host": "arch.local",
+      "host": "192.168.100.248",
       "port": 4433
     }
   ]
 }
+
+

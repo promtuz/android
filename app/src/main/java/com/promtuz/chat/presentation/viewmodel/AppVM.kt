@@ -54,8 +54,9 @@ class AppVM(
     }
 
     init {
+        api.initApi(context)
+
         connection()
-        api
     }
 
     fun connection() {
@@ -69,17 +70,17 @@ class AppVM(
             connecting = true
 
 
-            val real = quicClient.resolve()
-
-            real.onSuccess { resolved ->
-                // TODO: store these relays
-
-                for (relay in resolved.relays) {
-                    connectToRelay(relay).onSuccess {
-                        break
-                    }
-                }
-            }
+//            val real = quicClient.resolve()
+//
+//            real.onSuccess { resolved ->
+//                // TODO: store these relays
+//
+//                for (relay in resolved.relays) {
+//                    connectToRelay(relay).onSuccess {
+//                        break
+//                    }
+//                }
+//            }
 
             connecting = false
         }

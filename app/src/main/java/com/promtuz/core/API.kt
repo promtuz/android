@@ -5,10 +5,9 @@ import android.content.Context
 object API {
     init {
         System.loadLibrary("core")
-        initApi()
     }
 
-    private external fun initApi()
+    external fun initApi(context: Context)
 
     external fun resolve(context: Context)
 }

@@ -25,7 +25,9 @@ pub fn get_raw_res_id(env: &mut JNIEnv, context: &JObject, name: &str) -> anyhow
     Ok(value.i()?)
 }
 
-pub fn read_raw_res(env: &mut JNIEnv, context: &JObject, res_id: jint) -> anyhow::Result<Vec<u8>> {
+pub fn read_raw_res(env: &mut JNIEnv, context: &JObject, name: &str) -> anyhow::Result<Vec<u8>> {
+    let res_id = get_raw_res_id(env, context, name)?;
+
     // Resources res = context.getResources();
     let resources =
         env.call_method(context, "getResources", "()Landroid/content/res/Resources;", &[])?.l()?;

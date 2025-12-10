@@ -14,15 +14,11 @@ pub async fn connect_to_any_seed(
 
     for seed in seeds {
         let url = format!("{}:{}", seed.host, seed.port);
-
-        // Resolve URL → socket addresses
-        let addrs = match url.to_socket_addrs() {
-            Ok(a) => a,
-            _ => {
-                last_err = Some(anyhow!("failed to resolve seed: {}", url));
-                continue;
-            },
-        };
+        
+        let addrs = (seed.host.as_str(), seed.port)
+            .to_socket_addrs()?
+            .filter(|a| a.is_ipv4())
+            .collect::<Vec<_>>();
 
         // Try each resolved IP for this seed
         for addr in addrs {
