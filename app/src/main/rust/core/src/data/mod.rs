@@ -1,3 +1,5 @@
+pub mod relay;
+
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]

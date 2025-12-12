@@ -9,6 +9,7 @@ use jni::sys::jobject;
 
 pub mod error;
 pub mod ujni;
+pub mod sqlite;
 
 pub fn get_pair_object(env: &mut JNIEnv, first: JValue, second: JValue) -> jobject {
     let pair_class = env.find_class("kotlin/Pair").expect("kotlin.Pair is not found.");

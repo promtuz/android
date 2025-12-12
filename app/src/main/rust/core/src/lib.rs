@@ -17,6 +17,7 @@
 //! ```
 
 use std::sync::Mutex;
+use std::sync::RwLock;
 
 use common::msg::cbor::FromCbor;
 use common::msg::cbor::ToCbor;
@@ -39,20 +40,25 @@ use quinn::Endpoint;
 use quinn::EndpointConfig;
 use quinn::VarInt;
 use quinn::default_runtime;
+use rusqlite as sql;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 
 use crate::data::ResolverSeeds;
+use crate::data::relay::Relay;
+use crate::db::NETWORK_DB;
 use crate::events::InternalEvent;
 use crate::events::connection::ConnectionState;
 use crate::quic::dialer::connect_to_any_seed;
+use crate::utils::sqlite::initial_execute;
 use crate::utils::ujni::get_package_name;
 use crate::utils::ujni::read_raw_res;
 
 mod crypto;
 mod data;
+mod db;
 mod events;
 mod identity;
 mod quic;
@@ -61,7 +67,8 @@ mod utils;
 type JE<'local> = JNIEnv<'local>;
 type JC<'local> = JClass<'local>;
 
-use tokio::sync::broadcast;
+/// App's Package Name
+static PACKAGE_NAME: &str = "com.promtuz.chat";
 
 /// Event Bus for
 /// Rust -> Kotlin
@@ -120,6 +127,18 @@ pub extern "system" fn initApi(mut env: JNIEnv, _: JC, context: JObject) {
     endpoint.set_default_client_config(client_cfg);
 
     ENDPOINT.set(endpoint).expect("init was ran twice");
+
+    //==||==||==||==||==||==||==||==||==||==||==||==||==//
+    info!("DB: STARTING SQLITE DATABASE");
+
+    let db_block = (|| {
+        info!("DB: INITIALIZING TABLES");
+        initial_execute()?;
+
+        Ok::<(), anyhow::Error>(())
+    })();
+
+    jni_try!(env, db_block);
 }
 
 /// Resolves Relays
@@ -167,11 +186,11 @@ pub extern "system" fn resolve(mut env: JNIEnv, _: JC, context: JObject) {
                 info!("API: PACKET({})", hex::encode(&packet));
 
                 match CRes::from_cbor(&packet) {
-                    Ok(cres) =>
-                    {
+                    Ok(cres) => {
                         #[allow(irrefutable_let_patterns)]
                         if let GetRelays { relays } = cres {
-                            info!("RELAYS : {:?}", relays);
+                            _ = Relay::refresh(&relays);
+
                             conn.close(VarInt::from_u32(1), &[]);
                         }
                     },

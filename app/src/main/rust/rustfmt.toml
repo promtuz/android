@@ -10,3 +10,4 @@ group_imports = "StdExternalCrate"
 use_field_init_shorthand = true
 use_small_heuristics = "Max"
 fn_params_layout = "Compressed"
+tab_spaces = 4
