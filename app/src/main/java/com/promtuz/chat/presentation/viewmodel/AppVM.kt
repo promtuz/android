@@ -13,6 +13,7 @@ import com.promtuz.chat.data.remote.proto.pack
 import com.promtuz.chat.domain.model.Chat
 import com.promtuz.chat.navigation.AppNavigator
 import com.promtuz.chat.navigation.Routes
+import com.promtuz.chat.utils.logs.AppLogger
 import com.promtuz.core.API
 import com.promtuz.core.events.InternalEvent
 import kotlinx.coroutines.Dispatchers
@@ -67,25 +68,10 @@ class AppVM(
     fun connection() {
         if (connecting) return
 
-        api.resolve(context)
-
-//        R.raw.root_ca
-
         viewModelScope.launch {
             connecting = true
 
-
-//            val real = quicClient.resolve()
-//
-//            real.onSuccess { resolved ->
-//                // TODO: store these relays
-//
-//                for (relay in resolved.relays) {
-//                    connectToRelay(relay).onSuccess {
-//                        break
-//                    }
-//                }
-//            }
+            api.connect(context)
 
             connecting = false
         }

@@ -38,7 +38,7 @@ class QuicClient(
     private val crypto: Crypto
 ) : KoinComponent {
     private val context: Context get() = application.applicationContext
-    private var _status = mutableStateOf<ConnState>(ConnState.Idle)
+    private var _status = mutableStateOf(ConnState.Idle)
     val status: State<ConnState> get() = _status
 
     companion object {

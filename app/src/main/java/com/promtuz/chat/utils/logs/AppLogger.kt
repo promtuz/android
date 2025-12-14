@@ -11,10 +11,24 @@ data class AppLog(
     val priority: Int,
     val tag: String?,
     val message: String,
-    val t: Throwable?
-)
+    val t: Throwable?,
+) {
+    companion object {
+        /**
+         * Returns logcat priority based on given character
+         */
+        fun charPriority(char: Char) = when (char) {
+            'V' -> 2
+            'D' -> 3
+            'I' -> 4
+            'W' -> 5
+            'E' -> 6
+            else -> 3
+        }
+    }
+}
 
-class AppLogger : Timber.Tree() {
+object AppLogger : Timber.Tree() {
     override fun log(
         priority: Int,
         tag: String?,
@@ -22,14 +36,15 @@ class AppLogger : Timber.Tree() {
         t: Throwable?
     ) {
         val time = Calendar.getInstance().timeInMillis
-
         val cleanMessage = if (t != null) message.substringBefore('\n') else message
 
-        _logs.update { listOf(AppLog(time, priority, tag, cleanMessage, t)) + it }
+        this.push(AppLog(time, priority, tag, cleanMessage, t))
     }
 
-    companion object {
-        private var _logs = MutableStateFlow(emptyList<AppLog>())
-        val logs = _logs.asStateFlow()
+    fun push(log: AppLog) {
+        _logs.update { listOf(log) + it }
     }
+
+    private var _logs = MutableStateFlow(emptyList<AppLog>())
+    val logs = _logs.asStateFlow()
 }

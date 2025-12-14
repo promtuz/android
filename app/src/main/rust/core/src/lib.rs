@@ -16,6 +16,7 @@
 //! }
 //! ```
 
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
 
@@ -38,6 +39,7 @@ use once_cell::sync::OnceCell;
 use quinn::Connection;
 use quinn::Endpoint;
 use quinn::EndpointConfig;
+use quinn::TransportConfig;
 use quinn::VarInt;
 use quinn::default_runtime;
 use rusqlite as sql;
@@ -92,7 +94,7 @@ pub static CONNECTION: OnceCell<Mutex<Connection>> = OnceCell::new();
 #[macro_export]
 macro_rules! endpoint {
     () => {
-        if let Some(ep) = ENDPOINT.get() {
+        if let Some(ep) = $crate::ENDPOINT.get() {
             ep
         } else {
             log::error!("API is not initialized.");
@@ -125,7 +127,10 @@ pub extern "system" fn initApi(mut env: JNIEnv, _: JC, context: JObject) {
     let root_ca_bytes = jni_try!(env, read_raw_res(&mut env, &context, "root_ca"));
     let roots = jni_try!(env, load_root_ca_bytes(&root_ca_bytes));
 
-    let client_cfg = jni_try!(env, build_client_cfg(ProtoRole::Client, &roots));
+    let mut client_cfg = jni_try!(env, build_client_cfg(ProtoRole::Client, &roots));
+
+    client_cfg.transport_config(Arc::new(TransportConfig::default()));
+
     endpoint.set_default_client_config(client_cfg);
 
     ENDPOINT.set(endpoint).expect("init was ran twice");
@@ -143,12 +148,10 @@ pub extern "system" fn initApi(mut env: JNIEnv, _: JC, context: JObject) {
     jni_try!(env, db_block);
 }
 
-/// Resolves Relays
-///
-/// Need Resolver Seeds
+/// Connects to Relay
 #[jni(base = "com.promtuz.core", class = "API")]
-pub extern "system" fn resolve(mut env: JNIEnv, _: JC, context: JObject) {
-    info!("API: RESOLVING");
+pub extern "system" fn connect(mut env: JNIEnv, _: JC, context: JObject) {
+    info!("API: CONNECTING");
 
     // Checking Internet Connectivity
     if !has_internet() {
@@ -160,63 +163,16 @@ pub extern "system" fn resolve(mut env: JNIEnv, _: JC, context: JObject) {
     let seeds = jni_try!(env, serde_json::from_slice::<ResolverSeeds>(&seeds)).seeds;
 
     RUNTIME.spawn(async move {
-        info!("API: SENDING EVENT");
-        _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Resolving });
-
-        let conn = match connect_to_any_seed(endpoint!(), &seeds).await {
-            Ok(conn) => conn,
-            Err(err) => {
-                info!("API: SENDING EVENT");
-                _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Failed });
-                error!("API: RESOLVER FAILED - {}", err);
-                return;
+        match Relay::fetch_best() {
+            Ok(relay) => {
+                _ = relay.connect().await;
             },
-        };
-
-        let req = ClientRequest::GetRelays().pack().unwrap();
-
-        if let Ok((mut send, mut recv)) = conn.open_bi().await {
-            _ = send.write_all(&req).await;
-            _ = send.flush().await;
-
-            use CRes::*;
-            use ClientResponse as CRes;
-
-            if let Ok(packet_size) = recv.read_u32().await {
-                info!("API: PACKET SIZE({})", packet_size);
-
-                let mut packet = vec![0u8; packet_size as usize];
-
-                if let Err(err) = recv.read_exact(&mut packet).await {
-                    error!("Read failed : {}", err); // temp
-                }
-
-                info!("API: PACKET({})", hex::encode(&packet));
-
-                match CRes::from_cbor(&packet) {
-                    Ok(cres) =>
-                    {
-                        #[allow(irrefutable_let_patterns)]
-                        if let GetRelays { relays } = cres {
-                            _ = Relay::refresh(&relays);
-
-                            match Relay::fetch_best() {
-                                Ok(relay) => {
-                                    _ = relay.connect().await
-                                },
-                                Err(err) => {
-                                    error!("DB: FETCHING BEST RELAY FAILED {}", err);
-                                },
-                            }
-
-                            conn.close(VarInt::from_u32(1), &[]);
-                        }
-                    },
-                    Err(err) => {
-                        error!("API: CLIENT RES DECODE ERR : {}", err);
-                    },
-                }
-            }
+            Err(rusqlite::Error::QueryReturnedNoRows) => {
+                Relay::resolve(&seeds).await;
+            },
+            Err(err) => {
+                error!("DB: Relay fetch best failed - {err}")
+            },
         }
     });
 }

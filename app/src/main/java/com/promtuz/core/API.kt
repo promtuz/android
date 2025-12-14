@@ -14,7 +14,7 @@ object API {
     }
 
     external fun initApi(context: Context)
-    external fun resolve(context: Context)
+    external fun connect(context: Context)
 
     //=||=||=||=||=||==|  EVENTS  |==||=||=||=||=||=//
 

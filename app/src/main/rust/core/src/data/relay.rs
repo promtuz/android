@@ -1,8 +1,17 @@
 use anyhow::Result;
 use common::PROTOCOL_VERSION;
-use common::msg::client::RelayDescriptor;
+use common::msg::cbor::{FromCbor, ToCbor};
+use common::msg::client::{ClientRequest, ClientResponse, RelayDescriptor};
+use log::error;
+use quinn::VarInt;
 use rusqlite::Row;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
+use crate::events::InternalEvent;
+use crate::events::connection::ConnectionState;
+use crate::quic::dialer::connect_to_any_seed;
+use crate::{EVENT_BUS, endpoint};
+use crate::data::ResolverSeed;
 use crate::db::NETWORK_DB;
 use crate::utils::systime;
 
@@ -80,5 +89,58 @@ impl Relay {
         });
 
         Ok(0)
+    }
+
+    /// Resolves relays by connected to one of the resolver seed provided
+    pub async fn resolve(seeds: &[ResolverSeed]) {
+        _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Resolving });
+
+        let conn = match connect_to_any_seed(endpoint!(), seeds).await {
+            Ok(conn) => conn,
+            Err(_) => {
+                _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Failed });
+                return;
+            },
+        };
+
+        let req = ClientRequest::GetRelays().pack().unwrap();
+
+        if let Ok((mut send, mut recv)) = conn.open_bi().await {
+            _ = send.write_all(&req).await;
+            _ = send.flush().await;
+
+            use CRes::*;
+            use ClientResponse as CRes;
+
+            if let Ok(packet_size) = recv.read_u32().await {
+                let mut packet = vec![0u8; packet_size as usize];
+
+                if recv.read_exact(&mut packet).await.is_err() {
+                    return;
+                }
+
+                match CRes::from_cbor(&packet) {
+                    Ok(cres) =>
+                    {
+                        #[allow(irrefutable_let_patterns)]
+                        if let GetRelays { relays } = cres {
+                            _ = Relay::refresh(&relays);
+
+                            match Relay::fetch_best() {
+                                Ok(relay) => _ = relay.connect().await,
+                                Err(err) => {
+                                    error!("DB: FETCHING BEST RELAY FAILED {}", err);
+                                },
+                            }
+
+                            conn.close(VarInt::from_u32(1), &[]);
+                        }
+                    },
+                    Err(err) => {
+                        error!("API: CLIENT RES DECODE ERR : {}", err);
+                    },
+                }
+            }
+        }
     }
 }
