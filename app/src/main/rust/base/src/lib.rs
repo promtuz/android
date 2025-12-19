@@ -18,18 +18,14 @@
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::RwLock;
 use std::time::Duration;
 
-use common::msg::cbor::FromCbor;
-use common::msg::cbor::ToCbor;
-use common::msg::client::ClientRequest;
-use common::msg::client::ClientResponse;
 use common::quic::config::build_client_cfg;
 use common::quic::config::load_root_ca_bytes;
 use common::quic::config::setup_crypto_provider;
 use common::quic::protorole::ProtoRole;
 use jni::JNIEnv;
+use jni::objects::JByteArray;
 use jni::objects::JClass;
 use jni::objects::JObject;
 use log::error;
@@ -37,28 +33,24 @@ use log::info;
 use macros::jni;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
+use parking_lot::RwLock;
 use quinn::Connection;
 use quinn::Endpoint;
 use quinn::EndpointConfig;
 use quinn::TransportConfig;
-use quinn::VarInt;
 use quinn::default_runtime;
-use rusqlite as sql;
-use tokio::io::AsyncReadExt;
-use tokio::io::AsyncWriteExt;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 
 use crate::data::ResolverSeeds;
 use crate::data::relay::Relay;
-use crate::db::NETWORK_DB;
 use crate::db::initial_execute;
 use crate::events::InternalEvent;
 use crate::events::connection::ConnectionState;
-use crate::quic::dialer::connect_to_any_seed;
+use crate::quic::server::KeyPair;
 use crate::quic::server::RelayConnError;
+use crate::utils::KeyConversion;
 use crate::utils::has_internet;
-use crate::utils::ujni::get_package_name;
 use crate::utils::ujni::read_raw_res;
 
 mod crypto;
@@ -77,6 +69,8 @@ static PACKAGE_NAME: &str = "com.promtuz.chat";
 
 /// Event Bus for
 /// Rust -> Kotlin
+///
+/// TODO: make abstractions for easily pushing events
 static EVENT_BUS: Lazy<(
     mpsc::UnboundedSender<InternalEvent>,
     Mutex<mpsc::UnboundedReceiver<InternalEvent>>,
@@ -90,8 +84,9 @@ pub static RUNTIME: Lazy<Runtime> = Lazy::new(|| Runtime::new().unwrap());
 
 pub static ENDPOINT: OnceCell<Endpoint> = OnceCell::new();
 
-/// Connection to any relay server
-pub static CONNECTION: OnceCell<Mutex<Connection>> = OnceCell::new();
+/// current connection to any relay server,
+/// could be none if not connection yet
+pub static CONNECTION: RwLock<Option<Arc<Connection>>> = RwLock::new(None);
 
 #[macro_export]
 macro_rules! endpoint {
@@ -155,7 +150,14 @@ pub extern "system" fn initApi(mut env: JNIEnv, _: JC, context: JObject) {
 
 /// Connects to Relay
 #[jni(base = "com.promtuz.core", class = "API")]
-pub extern "system" fn connect(mut env: JNIEnv, _: JC, context: JObject) {
+pub extern "system" fn connect(
+    mut env: JNIEnv,
+    _: JC,
+    context: JObject,
+    ipk: JByteArray,
+    // SECURITY: idk, i feel like i should be concerned
+    isk: JByteArray,
+) {
     info!("API: CONNECTING");
 
     // Checking Internet Connectivity
@@ -167,22 +169,29 @@ pub extern "system" fn connect(mut env: JNIEnv, _: JC, context: JObject) {
     let seeds = jni_try!(env, read_raw_res(&mut env, &context, "resolver_seeds"));
     let seeds = jni_try!(env, serde_json::from_slice::<ResolverSeeds>(&seeds)).seeds;
 
+    let ipk = ipk.to_public(&mut env);
+    let isk = isk.to_secret(&mut env);
+
+    let keypair = KeyPair { public: ipk, secret: isk };
+
     RUNTIME.spawn(async move {
         loop {
             info!("RELAY(BEST): Fetching");
             match Relay::fetch_best() {
                 Ok(relay) => {
                     info!("RELAY(BEST): Found [{}]", relay.id);
-                    if let Err(RelayConnError::Continue) = relay.connect().await {
-                        continue;
+                    match relay.connect(&keypair).await {
+                        Ok(_) => break,
+                        Err(RelayConnError::Continue) => continue,
+                        Err(RelayConnError::Error(err)) => {
+                            error!("RELAY({}): Connection failed - {}", relay.id, err)
+                        },
                     }
                 },
                 Err(rusqlite::Error::QueryReturnedNoRows) => {
                     info!("RELAY(BEST): Not Found, Resolving");
                     match Relay::resolve(&seeds).await {
-                        Ok(_) => {
-                            continue;
-                        },
+                        Ok(_) => continue,
                         Err(err) => {
                             error!("RESOLVE: Failed {err}");
                         },
