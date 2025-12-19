@@ -103,6 +103,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "base"
+version = "0.1.0"
+dependencies = [
+ "android_logger",
+ "anyhow",
+ "common",
+ "hex",
+ "jni",
+ "log",
+ "macros",
+ "once_cell",
+ "parking_lot",
+ "quinn",
+ "rand",
+ "rusqlite",
+ "rusqlite_migration",
+ "rustls",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "base16ct"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -337,29 +360,6 @@ name = "constant_time_eq"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c74b8349d32d297c9134b8c88677813a227df8f779daa29bfc29c183fe3dca6"
-
-[[package]]
-name = "core"
-version = "0.1.0"
-dependencies = [
- "android_logger",
- "anyhow",
- "common",
- "hex",
- "jni",
- "log",
- "macros",
- "once_cell",
- "parking_lot",
- "quinn",
- "rand",
- "rusqlite",
- "rusqlite_migration",
- "rustls",
- "serde",
- "serde_json",
- "tokio",
-]
 
 [[package]]
 name = "core-foundation"
