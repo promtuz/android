@@ -91,23 +91,23 @@ class QrScannerVM(
 
     private lateinit var keyPair: Pair<ByteArray, ByteArray>
 
-    suspend fun connect(identity: Identity) = coroutineScope {
-
-        val conn = appVM.conn ?: return@coroutineScope
-
-
-        // PingIdentity contains almost same data as [identity]
-        // but contains hash of [identity]
-        // { ipk, epk, vfk, hash, nickname }
-        val ipk = keyManager.getPublicKey()
-        val verifyKey = keyManager.getSecretKey().toSigningKey().getVerificationKey()
-
-        keyPair = crypto.getStaticKeypair()
-
-        val pingIdentity = IdentityPacket.AddMe(
-            ipk, keyPair.second, verifyKey, userRepository.getCurrentUser().nickname
-        )
-
-        pingIdentity.pack()
-    }
+//    suspend fun connect(identity: Identity) = coroutineScope {
+//
+//        val conn = appVM.conn ?: return@coroutineScope
+//
+//
+//        // PingIdentity contains almost same data as [identity]
+//        // but contains hash of [identity]
+//        // { ipk, epk, vfk, hash, nickname }
+//        val ipk = keyManager.getPublicKey()
+//        val verifyKey = keyManager.getSecretKey().toSigningKey().getVerificationKey()
+//
+//        keyPair = crypto.getStaticKeypair()
+//
+//        val pingIdentity = IdentityPacket.AddMe(
+//            ipk, keyPair.second, verifyKey, userRepository.getCurrentUser().nickname
+//        )
+//
+//        pingIdentity.pack()
+//    }
 }

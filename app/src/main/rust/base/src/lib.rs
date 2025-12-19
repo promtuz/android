@@ -86,7 +86,7 @@ pub static ENDPOINT: OnceCell<Endpoint> = OnceCell::new();
 
 /// current connection to any relay server,
 /// could be none if not connection yet
-pub static CONNECTION: RwLock<Option<Arc<Connection>>> = RwLock::new(None);
+pub static CONNECTION: RwLock<Option<Connection>> = RwLock::new(None);
 
 #[macro_export]
 macro_rules! endpoint {
@@ -184,7 +184,7 @@ pub extern "system" fn connect(
                         Ok(_) => break,
                         Err(RelayConnError::Continue) => continue,
                         Err(RelayConnError::Error(err)) => {
-                            error!("RELAY({}): Connection failed - {}", relay.id, err)
+                            error!("RELAY({}): Connection failed - {:?}", relay.id, err);
                         },
                     }
                 },
@@ -210,6 +210,6 @@ pub extern "system" fn connect(
 #[jni(base = "com.promtuz.core", class = "Core")]
 pub extern "system" fn initLogger(_: JE, _: JC) {
     android_logger::init_once(
-        android_logger::Config::default().with_max_level(log::LevelFilter::Debug).with_tag("core"),
+        android_logger::Config::default().with_max_level(log::LevelFilter::Trace).with_tag("core"),
     );
 }

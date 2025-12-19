@@ -54,7 +54,8 @@ class ShareIdentityVM(
         val conn = appVM.conn ?: waitForRelay()
         val relayAddr = conn.serverAddress
 
-        val verifyKey = keyManager.getSecretKey().toSigningKey().getVerificationKey()
+        val verifyKey =
+            ByteArray(32) // keyManager.getSecretKey().toSigningKey().getVerificationKey()
         val publicKey = keyManager.getPublicKey()
 
         val identity = Identity(
@@ -83,7 +84,7 @@ class ShareIdentityVM(
 
             when (data) {
                 is IdentityPacket.AddMe -> {
-                    
+
                 }
 
                 null -> {}

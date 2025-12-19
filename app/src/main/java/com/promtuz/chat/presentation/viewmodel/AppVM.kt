@@ -13,6 +13,7 @@ import com.promtuz.chat.data.remote.proto.pack
 import com.promtuz.chat.domain.model.Chat
 import com.promtuz.chat.navigation.AppNavigator
 import com.promtuz.chat.navigation.Routes
+import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.utils.logs.AppLogger
 import com.promtuz.core.API
 import com.promtuz.core.events.InternalEvent
@@ -26,7 +27,10 @@ import tech.kwik.core.QuicClientConnection
 import timber.log.Timber
 
 class AppVM(
-    private val application: Application, private val quicClient: QuicClient, private val api: API
+    private val application: Application,
+    private val keyManager: KeyManager,
+    private val quicClient: QuicClient,
+    private val api: API
 ) : ViewModel() {
     private val context: Context get() = application.applicationContext
 
@@ -71,7 +75,9 @@ class AppVM(
         viewModelScope.launch {
             connecting = true
 
-            api.connect(context)
+
+
+            api.connect(context, keyManager.getPublicKey(), keyManager.getSecretKey())
 
             connecting = false
         }
@@ -90,14 +96,14 @@ class AppVM(
     }
 
 
-    private suspend fun connectToRelay(relay: RelayDescriptor): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            quicClient.connect(relay).map { conn ->
-                this@AppVM.conn = conn
-
-
-                //
-                // prolly create some handler class instance using conn & save it inside vm
-            }
-        }
+//    private suspend fun connectToRelay(relay: RelayDescriptor): Result<Unit> =
+//        withContext(Dispatchers.IO) {
+//            quicClient.connect(relay).map { conn ->
+//                this@AppVM.conn = conn
+//
+//
+//                //
+//                // prolly create some handler class instance using conn & save it inside vm
+//            }
+//        }
 }

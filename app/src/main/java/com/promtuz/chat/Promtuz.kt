@@ -29,7 +29,7 @@ class Promtuz : Application() {
                 val head = line.substringBefore(" : ")
                 var msg = line.substringAfter(" : ")
 
-                if (!msg.startsWith("core:")) return@forEachLine
+                if (!msg.startsWith("base:")) return@forEachLine
 
                 val parts = head.split(Regex("\\s+"))
 

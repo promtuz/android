@@ -6,7 +6,7 @@ use macros::jni;
 
 #[jni(base = "com.promtuz.core", class = "API")]
 pub extern "system" fn identityInit(
-  mut env: JNIEnv,
+  _: JNIEnv,
   _class: JClass,
   // Further Arguments
 ) {

@@ -6,6 +6,10 @@ edition = "2024"
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+default = ["std"]
+std = []
+
 [dependencies]
 android_logger = "0.15"
 common = { path = "../../../../../../common", features = [

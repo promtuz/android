@@ -1,9 +1,8 @@
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
-use std::sync::Arc;
-// use std::time::Duration;
 
+// use std::time::Duration;
 use anyhow::anyhow;
 use common::crypto::PublicKey;
 use common::crypto::encrypt::Encrypted;
@@ -13,9 +12,11 @@ use common::msg::cbor::ToCbor;
 // use common::msg::postcard::FromPCard;
 // use common::msg::postcard::ToPCard;
 use common::msg::relay::HandshakePacket;
+use log::debug;
 use log::info;
 use quinn::ConnectionError;
 use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 
 use crate::CONNECTION;
 use crate::ENDPOINT;
@@ -56,6 +57,8 @@ impl Relay {
 
         match ENDPOINT.get().unwrap().connect(addr, &self.id)?.await {
             Ok(conn) => {
+                info!("RELAY({}): Connected", self.id);
+
                 _ = EVENT_BUS
                     .0
                     .send(InternalEvent::Connection { state: ConnectionState::Handshaking });
@@ -66,15 +69,19 @@ impl Relay {
 
                 let client_hello = ClientHello { ipk: keypair.public.to_bytes() }.pack().unwrap();
                 send.write_all(&client_hello).await?;
+                send.flush().await?;
 
-                let conn = Arc::new(conn);
+                debug!("RELAY({}): SENDING {}", self.id, hex::encode(client_hello));
+
+                // let conn = Arc::new(conn;
                 loop {
-                    let conn = conn.clone();
 
                     let mut packet = vec![0u8; recv.read_u32().await? as usize];
                     recv.read_exact(&mut packet).await?;
 
-                    let msg = HandshakePacket::from_cbor(&packet)?;
+                    let msg = HandshakePacket::from_cbor(&packet).map_err(RelayConnError::Error)?;
+
+                    debug!("RELAY({}): RECEIVED {:?}", self.id, msg);
 
                     if let ServerChallenge { ct, epk } = msg {
                         let secret = keypair.secret.diffie_hellman(&PublicKey::from(epk));
@@ -94,17 +101,24 @@ impl Relay {
                             RelayConnError::Error(anyhow!("server proof is invalid"))
                         })?;
 
-                        let client_proof = ClientProof { proof }.pack()?;
+                        debug!("RELAY({}): DECRYPTED PROOF - {}", self.id, hex::encode(proof));
 
+                        let client_proof =
+                            ClientProof { proof }.pack().map_err(RelayConnError::Error)?;
+
+                        debug!("RELAY({}): SENDING {}", self.id, hex::encode(&client_proof));
                         send.write_all(&client_proof).await?;
+                        send.flush().await?;
                     } else if let ServerAccept { timestamp } = msg {
-                        info!("RELAY({}): Connected at {timestamp}", self.id);
+                        info!("RELAY({}): Authenticated at {timestamp}", self.id);
 
                         _ = EVENT_BUS
                             .0
                             .send(InternalEvent::Connection { state: ConnectionState::Connected });
 
-                        *CONNECTION.write() = Some(conn)
+                        *CONNECTION.write() = Some(conn);
+
+                        return Ok(());
                     } else if let ServerReject { reason } = msg {
                         info!("RELAY({}): Rejected because {reason}", self.id);
 
@@ -120,7 +134,10 @@ impl Relay {
 
                 Err(RelayConnError::Continue)
             },
-            Err(err) => Err(err.into()),
+            Err(err) => {
+                debug!("RELAY({}): Connection Fail because {:?}", self.id, err);
+                Err(err.into())
+            },
         }
     }
 }

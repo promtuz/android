@@ -56,151 +56,102 @@ class QuicClient(
         }
     }
 
-    suspend fun resolve(): Result<ResolvedRelays> = withContext(Dispatchers.IO) {
-        if (!hasInternetConnectivity(context)) return@withContext Result.failure(Throwable("No Internet"))
 
-        val seeds =
-            context.resources.openRawResource(R.raw.resolver_seeds).readBytes().decodeToString()
-                .let { Json.decodeFromString<ResolverSeeds>(it).seeds }
-
-        if (seeds.isEmpty()) {
-            setState(ConnState.Failed)
-        } else {
-            for (seed in seeds) {
-                try {
-                    setState(ConnState.Resolving)
-
-                    val conn = QuicClientConnection.newBuilder()
-                        .customTrustManager(TrustManager.pinned(context))
-                        .version(QuicConnection.QuicVersion.V1).serverName(seed.id)
-                        .uri(URI("https://${seed.host}:${seed.port}"))
-                        .applicationProtocol("client/$PROTOCOL_VERSION").build()
-
-                    conn.connect()
-
-                    val stream = conn.createStream(true)
-
-                    /// CBOR Representation of `ClientRequest::GetRelays()`, an empty struct with name "GetRelays"
-                    val getRelays = byteArrayOf(
-                        161.toByte(), 105, 71, 101, 116, 82, 101, 108, 97, 121, 115, 128.toByte()
-                    )
-                    stream.outputStream.write(getRelays)
-                    stream.outputStream.close()
-
-                    val bytes = stream.inputStream.readAllBytes()
-                    val res = cborDecode<ClientResponseDto>(bytes)
-
-                    conn.close()
-
-                    if (res != null) {
-                        return@withContext Result.success(res.content)
-                    }
-                } catch (e: Exception) {
-                    log().e(e, "Failed for seed ${seed.id}, trying next…")
-                }
-
-            }
-            setState(ConnState.Failed)
-            return@withContext Result.failure(Exception("All seeds failed"))
-        }
-        return@withContext Result.failure(Throwable("N0_RELAYS_FOR_YA"))
-    }
-
-    suspend fun connect(relay: RelayDescriptor): Result<QuicClientConnection> = withContext(
-        Dispatchers.IO
-    ) {
-        val addr = relay.addr.toString()
-
-        log().d("RELAY(${relay.id}): CONNECTING AT $addr")
-
-        if (!hasInternetConnectivity(context)) {
-            log().d("RELAY(${relay.id}): CONNECTION FAILED - NO INTERNET")
-            return@withContext Result.failure(Throwable("No Internet"))
-        }
-
-        try {
-            if (status.value == ConnState.Failed) setState(ConnState.Reconnecting)
-            else setState(ConnState.Connecting)
-
-            val conn =
-                QuicClientConnection.newBuilder().customTrustManager(TrustManager.pinned(context))
-                    .version(QuicConnection.QuicVersion.V1).serverName(relay.id)
-                    .uri(URI("https://${relay.addr.hostName}:${relay.addr.port}"))
-                    .applicationProtocol("client/$PROTOCOL_VERSION").build()
-
-            conn.connect()
-
-            log().d("RELAY(${relay.id}): CONNECTED")
-            log().d("RELAY(${relay.id}): STARTING HANDSHAKE")
-
-            setState(ConnState.Handshaking)
-
-            // HANDSHAKE BEGIN
-            val stream = conn.createStream(true)
-
-            log().d("RELAY(${relay.id}): CREATED HANDSHAKE STREAM")
-
-            val reader = PacketReader(stream.inputStream)
-
-            val ipk = keyManager.getPublicKey()
-            val isk = keyManager.getSecretKey()
-
-            val clientHello = HandshakePacket.ClientHello(ipk.bytes()) //, epk.bytes())
-            log().d("CLIENT HELLO : ${clientHello.pack().toHexString()}")
-            stream.outputStream.write(clientHello.pack())
-
-            val challengeBytes = reader.readPacket()
-            val challenge = cborDecode<HandshakePacket.ServerChallenge>(challengeBytes)
-                ?: error("Unexpected Server Message")
-            val dh = isk.diffieHellman(challenge.epk.bytes)
-
-            val key = crypto.deriveSharedKey(dh, ByteArray(32), "handshake.challenge.key")
-
-            val ad = ipk + challenge.epk.bytes
-
-            val proof = crypto.decryptData(
-                cipher = challenge.ct.bytes, nonce = ByteArray(12), key = key, ad
-            )
-
-            val clientProof = HandshakePacket.ClientProof(proof.bytes())
-            stream.outputStream.write(clientProof.pack())
-
-            val bytes = reader.readPacket()
-
-            // @formatter:off
-            val data =
-                cborDecode<HandshakePacket.ServerAccept>(bytes) ?:
-                cborDecode<HandshakePacket.ServerReject>(bytes)
-            // @formatter:on
-
-            when (data) {
-                is HandshakePacket.ServerAccept -> {
-                    log().d("RELAY(${relay.id}): HANDSHAKE SUCCESSFUL AT ${Time.getDateString(data.timestamp)}")
-                    setState(ConnState.Connected)
-                }
-
-                is HandshakePacket.ServerReject -> {
-                    log().d("RELAY(${relay.id}): HANDSHAKE REJECTED - ${data.reason}")
-                    setState(ConnState.Failed)
-                }
-
-                else -> {
-                    log().d("RELAY(${relay.id}): UNEXPECTED MESSAGE TYPE")
-                    error("Unexpected message type")
-                }
-            }
-
-            // HANDSHAKE END
-
-            Result.success(conn)
-        } catch (e: Exception) {
-            setState(ConnState.Failed)
-
-            log().e(e, "RELAY(${relay.id}): CONNECTION FAILED")
-
-            return@withContext Result.failure(e)
-        }
-    }
+//    suspend fun connect(relay: RelayDescriptor): Result<QuicClientConnection> = withContext(
+//        Dispatchers.IO
+//    ) {
+//        val addr = relay.addr.toString()
+//
+//        log().d("RELAY(${relay.id}): CONNECTING AT $addr")
+//
+//        if (!hasInternetConnectivity(context)) {
+//            log().d("RELAY(${relay.id}): CONNECTION FAILED - NO INTERNET")
+//            return@withContext Result.failure(Throwable("No Internet"))
+//        }
+//
+//        try {
+//            if (status.value == ConnState.Failed) setState(ConnState.Reconnecting)
+//            else setState(ConnState.Connecting)
+//
+//            val conn =
+//                QuicClientConnection.newBuilder().customTrustManager(TrustManager.pinned(context))
+//                    .version(QuicConnection.QuicVersion.V1).serverName(relay.id)
+//                    .uri(URI("https://${relay.addr.hostName}:${relay.addr.port}"))
+//                    .applicationProtocol("client/$PROTOCOL_VERSION").build()
+//
+//            conn.connect()
+//
+//            log().d("RELAY(${relay.id}): CONNECTED")
+//            log().d("RELAY(${relay.id}): STARTING HANDSHAKE")
+//
+//            setState(ConnState.Handshaking)
+//
+//            // HANDSHAKE BEGIN
+//            val stream = conn.createStream(true)
+//
+//            log().d("RELAY(${relay.id}): CREATED HANDSHAKE STREAM")
+//
+//            val reader = PacketReader(stream.inputStream)
+//
+//            val ipk = keyManager.getPublicKey()
+//            val isk = keyManager.getSecretKey()
+//
+//            val clientHello = HandshakePacket.ClientHello(ipk.bytes()) //, epk.bytes())
+//            log().d("CLIENT HELLO : ${clientHello.pack().toHexString()}")
+//            stream.outputStream.write(clientHello.pack())
+//
+//            val challengeBytes = reader.readPacket()
+//            val challenge = cborDecode<HandshakePacket.ServerChallenge>(challengeBytes)
+//                ?: error("Unexpected Server Message")
+//            val dh = isk.diffieHellman(challenge.epk.bytes)
+//
+//            val key = crypto.deriveSharedKey(dh, ByteArray(32), "handshake.challenge.key")
+//
+//            val ad = ipk + challenge.epk.bytes
+//
+//            val proof = crypto.decryptData(
+//                cipher = challenge.ct.bytes, nonce = ByteArray(12), key = key, ad
+//            )
+//
+//            val clientProof = HandshakePacket.ClientProof(proof.bytes())
+//            stream.outputStream.write(clientProof.pack())
+//
+//            val bytes = reader.readPacket()
+//
+//            // @formatter:off
+//            val data =
+//                cborDecode<HandshakePacket.ServerAccept>(bytes) ?:
+//                cborDecode<HandshakePacket.ServerReject>(bytes)
+//            // @formatter:on
+//
+//            when (data) {
+//                is HandshakePacket.ServerAccept -> {
+//                    log().d("RELAY(${relay.id}): HANDSHAKE SUCCESSFUL AT ${Time.getDateString(data.timestamp)}")
+//                    setState(ConnState.Connected)
+//                }
+//
+//                is HandshakePacket.ServerReject -> {
+//                    log().d("RELAY(${relay.id}): HANDSHAKE REJECTED - ${data.reason}")
+//                    setState(ConnState.Failed)
+//                }
+//
+//                else -> {
+//                    log().d("RELAY(${relay.id}): UNEXPECTED MESSAGE TYPE")
+//                    error("Unexpected message type")
+//                }
+//            }
+//
+//            // HANDSHAKE END
+//
+//            Result.success(conn)
+//        } catch (e: Exception) {
+//            setState(ConnState.Failed)
+//
+//            log().e(e, "RELAY(${relay.id}): CONNECTION FAILED")
+//
+//            return@withContext Result.failure(e)
+//        }
+//    }
 
     private fun hasInternetConnectivity(context: Context): Boolean {
         val connectivityManager =
