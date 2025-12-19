@@ -7,11 +7,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
+import timber.log.Timber
 
 object API {
     init {
         System.loadLibrary("core")
+        Timber.tag("API").d("LOADED LIBCORE");
     }
+
+    // /** Initiates `android_logger` crate in `libcore` */
+    // external fun initLogger()
 
     external fun initApi(context: Context)
     external fun connect(context: Context, ipk: ByteArray, isk: ByteArray)
@@ -34,7 +39,7 @@ object API {
                     @OptIn(ExperimentalSerializationApi::class)
                     trySend(AppCbor.instance.decodeFromByteArray<InternalEvent>(bytes))
                 } catch (e: Exception) {
-                    println("INTERNAL EVENT DESER FAIL : $e")
+                    Timber.tag("API").e(e, "INTERNAL EVENT DESER FAIL");
                 }
             } else {
                 delay(16) // event bus polling interval

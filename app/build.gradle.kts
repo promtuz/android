@@ -142,7 +142,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
@@ -150,42 +149,24 @@ dependencies {
 
     implementation(libs.androidx.core.splashscreen)
 
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.android)
-    implementation(libs.ktor.client.content.negotiation)
-
-    implementation(libs.ktor.serialization.kotlinx.json)
-
     implementation(libs.kotlinx.serialization.core)
-    implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.cbor)
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
-
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)
 
-
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.compose.navigation)
-
-//    implementation(libs.kwik)
-
-    implementation("tech.kwik:kwik")
-
-    implementation(libs.msgpack.core)
 
     implementation(kotlin("reflect"))
 
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
-    implementation(libs.androidx.camera.mlkit.vision)
-    implementation(libs.androidx.camera.extensions)
 
     implementation(libs.barcode.scanning)
     implementation(libs.zxing.core)

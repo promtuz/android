@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import com.promtuz.chat.data.remote.QuicClient
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.ui.activities.App
 import com.promtuz.chat.ui.activities.Welcome
@@ -15,7 +14,6 @@ import org.koin.android.ext.android.inject
 
 class LauncherActivity : ComponentActivity() {
     private lateinit var keyManager: KeyManager
-    private lateinit var quicClient: QuicClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen: SplashScreen = installSplashScreen()
@@ -29,8 +27,6 @@ class LauncherActivity : ComponentActivity() {
 
         keyManager = inject<KeyManager>().value
         keyManager.initialize()
-
-        quicClient = inject<QuicClient>().value
 
         lifecycleScope.launch {
             try {

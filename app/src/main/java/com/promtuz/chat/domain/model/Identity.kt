@@ -10,6 +10,9 @@ import kotlin.reflect.KProperty1
 
 /**
  *  Identity data class is used in exchanging public keys using QR on [ShareIdentity]
+ *
+ *  Leaving this undeleted for now, but this will not be used anymore.
+ *  Anything related to this will be migrated to `libcore` in future
  */
 @Serializable
 data class Identity(

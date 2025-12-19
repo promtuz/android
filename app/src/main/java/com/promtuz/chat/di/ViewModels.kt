@@ -8,7 +8,6 @@ import com.promtuz.chat.presentation.viewmodel.SettingsVM
 import com.promtuz.chat.presentation.viewmodel.ShareIdentityVM
 import com.promtuz.chat.presentation.viewmodel.WelcomeVM
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 

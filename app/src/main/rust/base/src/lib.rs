@@ -53,7 +53,6 @@ use crate::utils::KeyConversion;
 use crate::utils::has_internet;
 use crate::utils::ujni::read_raw_res;
 
-mod crypto;
 mod data;
 mod db;
 mod events;
@@ -105,6 +104,10 @@ macro_rules! endpoint {
 /// Initializes Endpoint
 #[jni(base = "com.promtuz.core", class = "API")]
 pub extern "system" fn initApi(mut env: JNIEnv, _: JC, context: JObject) {
+    android_logger::init_once(
+        android_logger::Config::default().with_max_level(log::LevelFilter::Trace).with_tag("core"),
+    );
+    
     info!("API: INIT START");
 
     let rt = RUNTIME.handle().clone();
@@ -205,11 +208,4 @@ pub extern "system" fn connect(
             break;
         }
     });
-}
-
-#[jni(base = "com.promtuz.core", class = "Core")]
-pub extern "system" fn initLogger(_: JE, _: JC) {
-    android_logger::init_once(
-        android_logger::Config::default().with_max_level(log::LevelFilter::Trace).with_tag("core"),
-    );
 }

@@ -1,18 +1,17 @@
 package com.promtuz.chat.security
 
+//import kotlinx.io.IOException
 import android.content.Context
 import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.core.content.edit
-import com.promtuz.core.Crypto
-import kotlinx.io.IOException
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey as JSecretKey
 import javax.crypto.spec.GCMParameterSpec
 import kotlin.io.encoding.Base64
+import javax.crypto.SecretKey as JSecretKey
 
 class KeyManager(context: Context) {
     companion object {
@@ -102,10 +101,10 @@ class KeyManager(context: Context) {
         return decryptWithKeystoreKey(cipher, iv)
     }
 
-    @Throws(IOException::class)
+    //    @Throws(IOException::class)
     fun getPublicKey(): ByteArray {
         val pubKeyStr = prefs.getString(IDENTITY_PUBLIC, null)
-            ?: throw IOException("Public Key not found in KeyManager")
+            ?: error("Public Key not found in KeyManager")
         return Base64.decode(pubKeyStr)
     }
 }

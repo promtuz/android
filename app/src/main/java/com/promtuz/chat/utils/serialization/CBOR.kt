@@ -33,9 +33,9 @@ object AppCbor {
 
 
 //@Serializable
-interface CborEnvelope
-
-@OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T> T.toCbor(): ByteArray where T : Any {
-    return AppCbor.instance.encodeToByteArray<T>(this)
-}
+//interface CborEnvelope
+//
+//@OptIn(ExperimentalSerializationApi::class)
+//inline fun <reified T> T.toCbor(): ByteArray where T : Any {
+//    return AppCbor.instance.encodeToByteArray<T>(this)
+//}

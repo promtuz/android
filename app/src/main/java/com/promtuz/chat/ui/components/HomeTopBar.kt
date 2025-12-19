@@ -24,7 +24,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.promtuz.chat.R
-import com.promtuz.chat.data.remote.QuicClient
 import com.promtuz.chat.navigation.Routes
 import com.promtuz.chat.presentation.viewmodel.AppVM
 import com.promtuz.chat.ui.theme.gradientScrim
@@ -42,7 +41,6 @@ import com.promtuz.chat.presentation.state.ConnectionState as CS
 fun HomeTopBar(
     appViewModel: AppVM,
     api: API = koinInject(),
-    quicClient: QuicClient = koinInject(),
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -65,9 +63,10 @@ fun HomeTopBar(
                             job?.cancel()
                             job = launch {
                                 delay(1200)
-                                if (quicClient.status.value == CS.Connected) {
-                                    dynamicTitle.emit(staticTitle)
-                                }
+                                // FIXME: add current connection status getter in `API`
+//                                if (quicClient.status.value == CS.Connected) {
+//                                    dynamicTitle.emit(staticTitle)
+//                                }
                             }
                         }
                     }

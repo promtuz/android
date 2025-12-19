@@ -1,7 +1,5 @@
 package com.promtuz.chat.utils.extensions
 
-import kotlin.reflect.KProperty1
-
 inline fun <reified T : Any> T.structuralEquals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is T) return false

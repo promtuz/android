@@ -7,14 +7,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.mlkit.vision.barcode.common.Barcode
-import com.promtuz.chat.data.remote.proto.IdentityPacket
-import com.promtuz.chat.data.remote.proto.pack
-import com.promtuz.chat.data.repository.UserRepository
 import com.promtuz.chat.domain.model.Identity
 import com.promtuz.chat.presentation.state.PermissionState
-import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.utils.serialization.cborDecode
-import com.promtuz.core.Crypto
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,11 +18,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class QrScannerVM(
-    private val userRepository: UserRepository,
     private val application: Application,
-    private val keyManager: KeyManager,
-    private val crypto: Crypto,
-    private val appVM: AppVM,
 ) : ViewModel() {
     private val context: Context get() = application.applicationContext
     private val log = Timber.tag("QrScannerVM")
@@ -91,23 +82,7 @@ class QrScannerVM(
 
     private lateinit var keyPair: Pair<ByteArray, ByteArray>
 
-//    suspend fun connect(identity: Identity) = coroutineScope {
-//
-//        val conn = appVM.conn ?: return@coroutineScope
-//
-//
-//        // PingIdentity contains almost same data as [identity]
-//        // but contains hash of [identity]
-//        // { ipk, epk, vfk, hash, nickname }
-//        val ipk = keyManager.getPublicKey()
-//        val verifyKey = keyManager.getSecretKey().toSigningKey().getVerificationKey()
-//
-//        keyPair = crypto.getStaticKeypair()
-//
-//        val pingIdentity = IdentityPacket.AddMe(
-//            ipk, keyPair.second, verifyKey, userRepository.getCurrentUser().nickname
-//        )
-//
-//        pingIdentity.pack()
-//    }
+    suspend fun connect(identity: Identity) = coroutineScope {
+        // TODO: TO BE REIMPLEMENTED IN `licore`
+    }
 }

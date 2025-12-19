@@ -1,37 +1,22 @@
 package com.promtuz.chat.presentation.viewmodel
 
+//import com.promtuz.chat.data.remote.ConnectionError
 import android.app.Application
-import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.promtuz.chat.data.local.databases.AppDatabase
-import com.promtuz.chat.data.local.entities.User
-//import com.promtuz.chat.data.remote.ConnectionError
-import com.promtuz.chat.data.remote.QuicClient
 import com.promtuz.chat.presentation.state.WelcomeField
 import com.promtuz.chat.presentation.state.WelcomeStatus
 import com.promtuz.chat.presentation.state.WelcomeUiState
-import com.promtuz.chat.security.KeyManager
-import com.promtuz.core.Core
-import com.promtuz.core.Crypto
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 class WelcomeVM(
-    private val keyManager: KeyManager,
-    private val crypto: Crypto,
     private val application: Application,
     appDatabase: AppDatabase
 ) : ViewModel(), KoinComponent {
-    private val context: Context get() = application.applicationContext
-    private val users = appDatabase.userDao()
-
-    lateinit var quicClient: QuicClient
+//    private val context: Context get() = application.applicationContext
+//    private val users = appDatabase.userDao()
 
     private val _uiState = mutableStateOf(
         WelcomeUiState(
@@ -51,41 +36,6 @@ class WelcomeVM(
     fun `continue`(onSuccess: () -> Unit) {
         onChange(WelcomeField.Status, WelcomeStatus.Generating)
 
-        // Step 1.
-        val (secret, public) = crypto.getStaticKeypair()
-
-        // Step 2.
-        keyManager.storeSecretKey(secret)
-        keyManager.storePublicKey(public)
-
-        _uiState.value = _uiState.value.copy(status = WelcomeStatus.Connecting)
-
-        if (!::quicClient.isInitialized) quicClient = inject<QuicClient>().value
-
-        viewModelScope.launch {
-            users.insert(User(public, _uiState.value.nickname))
-            onSuccess()
-        }
+        // TODO: reimplement in `libcore`
     }
-//        viewModelScope.launch {
-//            quicClient.connect(context).onSuccess {
-//                _uiState.value = _uiState.value.copy(status = WelcomeStatus.Success)
-//                CoroutineScope(Dispatchers.IO).launch {
-//                    users.insert(User(public, _uiState.value.nickname))
-//                }
-//                onSuccess()
-//            }.onFailure {
-//                val errorText = when (val e = it) {
-//                    is ConnectionError.HandshakeFailed -> "Handshake Rejected : ${e.reason}"
-//                    ConnectionError.NoInternet -> "No Internet"
-//                    ConnectionError.ServerUnreachable -> "Server Unreachable"
-//                    ConnectionError.Timeout -> "Connection Timed Out"
-//                    is ConnectionError.Unknown -> e.exception.toString()
-//                    else -> it.message
-//                }
-//
-//                _uiState.value = _uiState.value.copy(errorText = errorText)
-//                _uiState.value = _uiState.value.copy(status = WelcomeStatus.Normal)
-//            }
-//        }
 }
