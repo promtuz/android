@@ -21,5 +21,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Promtuz"
 include(":app")
-
-includeBuild("../kwik")

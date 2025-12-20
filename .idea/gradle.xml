@@ -4,28 +4,6 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <compositeConfiguration>
-          <compositeBuild compositeDefinitionSource="SCRIPT">
-            <builds>
-              <build path="$PROJECT_DIR$/../kwik" name="kwik">
-                <projects>
-                  <project path="$PROJECT_DIR$/../kwik" />
-                  <project path="$PROJECT_DIR$/../kwik/cli" />
-                  <project path="$PROJECT_DIR$/../kwik/core" />
-                  <project path="$PROJECT_DIR$/../kwik/h09" />
-                  <project path="$PROJECT_DIR$/../kwik/interop" />
-                  <project path="$PROJECT_DIR$/../kwik/qlog" />
-                  <project path="$PROJECT_DIR$/../kwik/samples" />
-                </projects>
-              </build>
-              <build path="$PROJECT_DIR$/../kwik/buildSrc" name="buildSrc">
-                <projects>
-                  <project path="$PROJECT_DIR$/../kwik/buildSrc" />
-                </projects>
-              </build>
-            </builds>
-          </compositeBuild>
-        </compositeConfiguration>
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
@@ -33,14 +11,6 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/../kwik" />
-            <option value="$PROJECT_DIR$/../kwik/buildSrc" />
-            <option value="$PROJECT_DIR$/../kwik/cli" />
-            <option value="$PROJECT_DIR$/../kwik/core" />
-            <option value="$PROJECT_DIR$/../kwik/h09" />
-            <option value="$PROJECT_DIR$/../kwik/interop" />
-            <option value="$PROJECT_DIR$/../kwik/qlog" />
-            <option value="$PROJECT_DIR$/../kwik/samples" />
           </set>
         </option>
       </GradleProjectSettings>

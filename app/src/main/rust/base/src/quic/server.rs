@@ -2,17 +2,15 @@ use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
-// use std::time::Duration;
 use anyhow::anyhow;
 use common::crypto::PublicKey;
 use common::crypto::encrypt::Encrypted;
 use common::crypto::get_shared_key;
 use common::msg::cbor::FromCbor;
 use common::msg::cbor::ToCbor;
-// use common::msg::postcard::FromPCard;
-// use common::msg::postcard::ToPCard;
 use common::msg::relay::HandshakePacket;
 use log::debug;
+use log::error;
 use log::info;
 use quinn::ConnectionError;
 use tokio::io::AsyncReadExt;
@@ -20,9 +18,8 @@ use tokio::io::AsyncWriteExt;
 
 use crate::CONNECTION;
 use crate::ENDPOINT;
-use crate::EVENT_BUS;
 use crate::data::relay::Relay;
-use crate::events::InternalEvent;
+use crate::events::Emittable;
 use crate::events::connection::ConnectionState;
 
 pub enum RelayConnError {
@@ -50,18 +47,13 @@ impl Relay {
 
         info!("RELAY({}): CONNECTING AT {}", self.id, addr);
 
-        _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Connecting });
-
-        // TODO: verifying if the host exists before trying udp based handshake
-        // ping?
+        ConnectionState::Connecting.emit();
 
         match ENDPOINT.get().unwrap().connect(addr, &self.id)?.await {
             Ok(conn) => {
                 info!("RELAY({}): Connected", self.id);
 
-                _ = EVENT_BUS
-                    .0
-                    .send(InternalEvent::Connection { state: ConnectionState::Handshaking });
+                ConnectionState::Handshaking.emit();
 
                 let (mut send, mut recv) = conn.open_bi().await?;
 
@@ -75,7 +67,6 @@ impl Relay {
 
                 // let conn = Arc::new(conn;
                 loop {
-
                     let mut packet = vec![0u8; recv.read_u32().await? as usize];
                     recv.read_exact(&mut packet).await?;
 
@@ -112,11 +103,11 @@ impl Relay {
                     } else if let ServerAccept { timestamp } = msg {
                         info!("RELAY({}): Authenticated at {timestamp}", self.id);
 
-                        _ = EVENT_BUS
-                            .0
-                            .send(InternalEvent::Connection { state: ConnectionState::Connected });
+                        ConnectionState::Connected.emit();
 
                         *CONNECTION.write() = Some(conn);
+
+                        Self::handle();
 
                         return Ok(());
                     } else if let ServerReject { reason } = msg {
@@ -128,7 +119,7 @@ impl Relay {
                 }
             },
             Err(ConnectionError::TimedOut) => {
-                _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Failed });
+                ConnectionState::Failed.emit();
 
                 _ = self.downvote().await;
 
@@ -139,5 +130,32 @@ impl Relay {
                 Err(err.into())
             },
         }
+    }
+
+    fn handle() {
+        tokio::spawn(async {
+            debug!("RELAY_HANDLE: STANDBY");
+            loop {
+                let conn = {
+                    let guard = CONNECTION.read();
+                    guard.clone()
+                };
+
+                if let Some(conn) = conn {
+                    match conn.accept_bi().await {
+                        Ok((_, _)) => {
+                            // Server will not send client anything, YET
+                        },
+                        Err(err) => {
+                            ConnectionState::Disconnected.emit();
+                            return error!("RELAY_HANDLE: {err}");
+                        },
+                    };
+                } else {
+                    debug!("RELAY_HANDLE: NO CONN, BYE!");
+                    break;
+                }
+            }
+        });
     }
 }

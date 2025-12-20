@@ -6,7 +6,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -28,6 +27,7 @@ import com.promtuz.chat.navigation.Routes
 import com.promtuz.chat.presentation.viewmodel.AppVM
 import com.promtuz.chat.ui.theme.gradientScrim
 import com.promtuz.core.API
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +36,6 @@ import org.koin.compose.koinInject
 import com.promtuz.chat.presentation.state.ConnectionState as CS
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
     appViewModel: AppVM,
@@ -45,9 +44,29 @@ fun HomeTopBar(
     val context = LocalContext.current
     val resources = LocalResources.current
     val staticTitle = stringResource(R.string.app_name)
-    val dynamicTitle = remember { MutableStateFlow(staticTitle) }
+    val dynamicTitle = remember {
+        MutableStateFlow(
+            api.connectionState.let {
+                if (it == CS.Connected) staticTitle else resources.getString(
+                    it.text
+                )
+            }
+        )
+    }
     var job by remember { mutableStateOf<Job?>(null) }
     val menuExpanded = remember { mutableStateOf(false) }
+
+    val handleState: CoroutineScope.(state: CS) -> String = { state ->
+        resources.getString(state.text).also {
+            job?.cancel()
+            job = launch {
+                delay(1200)
+                if (api.connectionState == state) {
+                    dynamicTitle.emit(staticTitle)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         appViewModel.connStateFlow.collect { newStatus ->
@@ -58,19 +77,10 @@ fun HomeTopBar(
                         newStatus.text
                     )
 
-                    CS.Connected -> {
-                        resources.getString(newStatus.text).also {
-                            job?.cancel()
-                            job = launch {
-                                delay(1200)
-                                // FIXME: add current connection status getter in `API`
-//                                if (quicClient.status.value == CS.Connected) {
-//                                    dynamicTitle.emit(staticTitle)
-//                                }
-                            }
-                        }
-                    }
-                })
+                    CS.Disconnected -> handleState(newStatus)
+                    CS.Connected -> handleState(newStatus)
+                }
+            )
         }
     }
 

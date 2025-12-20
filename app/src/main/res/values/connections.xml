@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="state_disconnected">Disconnected</string>
     <string name="state_nointernet">No Internet</string>
     <string name="state_idle">Idle</string>
     <string name="state_resolving">Resolving…</string>

@@ -18,6 +18,7 @@ use crate::ENDPOINT;
 use crate::EVENT_BUS;
 use crate::data::ResolverSeed;
 use crate::db::NETWORK_DB;
+use crate::events::Emittable;
 use crate::events::InternalEvent;
 use crate::events::connection::ConnectionState;
 use crate::quic::dialer::connect_to_any_seed;
@@ -111,7 +112,7 @@ impl Relay {
     ///
     /// Any type of failure except ui related is not tolerated and will return an error
     pub async fn resolve(seeds: &[ResolverSeed]) -> anyhow::Result<()> {
-        _ = EVENT_BUS.0.send(InternalEvent::Connection { state: ConnectionState::Resolving });
+        ConnectionState::Resolving.emit();
 
         let conn =
             match connect_to_any_seed(ENDPOINT.get().ok_or(anyhow!("API not initialized"))?, seeds)
@@ -119,9 +120,7 @@ impl Relay {
             {
                 Ok(conn) => conn,
                 Err(err) => {
-                    _ = EVENT_BUS
-                        .0
-                        .send(InternalEvent::Connection { state: ConnectionState::Failed });
+                    ConnectionState::Failed.emit();
                     return Err(err);
                 },
             };

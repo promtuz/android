@@ -7,6 +7,10 @@ pub mod connection;
 pub mod identity;
 pub mod poll;
 
+pub trait Emittable {
+    fn emit(self);
+}
+
 #[derive(Serialize, Debug, Clone, PartialEq, Eq)]
 #[allow(unused)]
 pub enum InternalEvent {

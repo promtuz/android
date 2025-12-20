@@ -1,6 +1,7 @@
 package com.promtuz.core
 
 import android.content.Context
+import com.promtuz.chat.presentation.state.ConnectionState
 import com.promtuz.chat.utils.serialization.AppCbor
 import com.promtuz.core.events.InternalEvent
 import kotlinx.coroutines.delay
@@ -17,6 +18,14 @@ object API {
 
     // /** Initiates `android_logger` crate in `libcore` */
     // external fun initLogger()
+
+    /**
+     * Returns current connection state
+     */
+    val connectionState: ConnectionState
+        get() = ConnectionState.fromInt(getInternalConnectionState())
+
+    private external fun getInternalConnectionState(): Int
 
     external fun initApi(context: Context)
     external fun connect(context: Context, ipk: ByteArray, isk: ByteArray)
