@@ -1,3 +1,7 @@
+use std::sync::Arc;
+use std::sync::atomic::AtomicI32;
+use std::sync::atomic::Ordering;
+
 use anyhow::Result;
 use anyhow::anyhow;
 use common::PROTOCOL_VERSION;
@@ -7,9 +11,11 @@ use common::msg::client::ClientRequest;
 use common::msg::client::ClientResponse;
 use common::msg::client::RelayDescriptor;
 use log::info;
+use quinn::Connection;
 use quinn::VarInt;
 use rusqlite::Row;
 use rusqlite::params;
+use serde::Serialize;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 
@@ -21,9 +27,30 @@ use crate::events::connection::ConnectionState;
 use crate::quic::dialer::connect_to_any_seed;
 use crate::utils::systime;
 
+/// Shareable Statistical Data
+#[derive(Debug, Serialize)]
+pub struct RelayInfo {
+    pub id: String,
+    pub host: String,
+    pub port: u16,
+    pub reputation: i32,
+    pub avg_latency: Option<u64>,
+}
+
+/// Relay instance
+#[derive(Debug, Clone)]
+pub struct Relay {
+    pub id: Arc<str>,
+    pub host: Arc<str>,
+    pub port: u16,
+
+    /// Contains quinn connection IF connected
+    pub connection: Option<Connection>,
+}
+
 /// Local Database Representation of Relay
 #[derive(Debug)]
-pub struct Relay {
+pub struct RelayRow {
     pub id: String,
     pub host: String,
     pub port: u16,
@@ -37,6 +64,21 @@ pub struct Relay {
 
 /// TODO: Create unit testing for this
 impl Relay {
+    pub fn info(&self) -> Result<RelayInfo> {
+        let conn = NETWORK_DB.lock();
+
+        conn.query_one("SELECT * FROM relays WHERE id = ?1", [self.id.clone()], |row| {
+            Ok(RelayInfo {
+                id: row.get("id")?,
+                host: row.get("host")?,
+                port: row.get("port")?,
+                avg_latency: row.get("last_avg_latency")?,
+                reputation: row.get("reputation")?,
+            })
+        })
+        .map_err(|e| anyhow!(e))
+    }
+
     /// "Best" how?
     ///
     /// - Must match current version
@@ -60,10 +102,16 @@ impl Relay {
             [PROTOCOL_VERSION],
             Self::from_row,
         )
+        .map(|r| Self {
+            id: r.id.into(),
+            host: r.host.into(),
+            port: r.port,
+            connection: None,
+        })
     }
 
-    fn from_row(row: &Row) -> rusqlite::Result<Self> {
-        Ok(Self {
+    fn from_row(row: &Row) -> rusqlite::Result<RelayRow> {
+        Ok(RelayRow {
             id: row.get("id")?,
             host: row.get("host")?,
             port: row.get("port")?,
@@ -138,19 +186,11 @@ impl Relay {
         recv.read_exact(&mut packet).await?;
 
         match CRes::from_cbor(&packet) {
-            Ok(cres) => {
+            Ok(cres) =>
+            {
                 #[allow(irrefutable_let_patterns)]
                 if let GetRelays { relays } = cres {
                     Relay::refresh(&relays)?;
-
-                    // we letting the connect function do this itself
-
-                    // match Relay::fetch_best() {
-                    //     Ok(relay) => _ = relay.connect().await,
-                    //     Err(err) => {
-                    //         error!("DB: FETCHING BEST RELAY FAILED {}", err);
-                    //     },
-                    // }
 
                     conn.close(VarInt::from_u32(1), &[]);
                 }
@@ -164,12 +204,26 @@ impl Relay {
     /// Reduces reputation of relay by 1
     ///
     /// Returns updated reputation
-    pub async fn downvote(&self) -> anyhow::Result<i16> {
+    pub fn downvote(&self) -> anyhow::Result<i16> {
         info!("RELAY({}): Downvoting", self.id);
         let conn = NETWORK_DB.lock();
 
         Ok(conn.query_one(
             "UPDATE relays SET reputation = reputation - 1 WHERE id = ?1 RETURNING reputation;",
+            params![self.id],
+            |r| r.get(0),
+        )?)
+    }
+
+    /// Increases reputation of relay by 1
+    ///
+    /// Returns updated reputation
+    pub fn upvote(&self) -> anyhow::Result<i16> {
+        info!("RELAY({}): Upvoting", self.id);
+        let conn = NETWORK_DB.lock();
+
+        Ok(conn.query_one(
+            "UPDATE relays SET reputation = reputation + 1 WHERE id = ?1 RETURNING reputation;",
             params![self.id],
             |r| r.get(0),
         )?)

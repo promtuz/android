@@ -16,6 +16,4 @@ CREATE TABLE IF NOT EXISTS relays (
     last_version INTEGER NOT NULL,
 
     reputation INTEGER NOT NULL DEFAULT 0
-
-    -- region TEXT
 )

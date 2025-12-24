@@ -50,6 +50,7 @@ fun SettingsScreen(
 
     val navigate: (NavKey) -> Unit = { route -> appViewModel.navigator.push(route) }
 
+    // @formatter:off
     val settingGroups = remember {
         listOf(
             SettingGroup(
@@ -72,9 +73,9 @@ fun SettingsScreen(
             ),
             SettingGroup(
                 "Network", listOf(
+                    SettingItem("Statistics", R.drawable.i_connection_status) { navigate(Routes.NetworkStats) },
                     SettingItem("Resolvers", R.drawable.i_dns) {},
                     SettingItem("Relay Nodes", R.drawable.i_hub) {},
-                    SettingItem("Connection Status", R.drawable.i_connection_status) {},
                 )
             ),
             SettingGroup(
@@ -90,6 +91,7 @@ fun SettingsScreen(
             ),
         )
     }
+    // @formatter:on
 
     FlexibleScreen(
         { Text("Settings") },

@@ -1,6 +1,7 @@
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
+use std::sync::atomic::Ordering;
 
 use anyhow::anyhow;
 use common::crypto::PublicKey;
@@ -12,12 +13,13 @@ use common::msg::relay::HandshakePacket;
 use log::debug;
 use log::error;
 use log::info;
+use parking_lot::RwLock;
 use quinn::ConnectionError;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 
 use crate::ENDPOINT;
-use crate::api::connection::CONNECTION;
+use crate::api::conn_stats::CONNECTION_START_TIME;
 use crate::data::relay::Relay;
 use crate::events::Emittable;
 use crate::events::connection::ConnectionState;
@@ -41,8 +43,10 @@ pub struct KeyPair {
     pub secret: common::crypto::StaticSecret,
 }
 
+pub static RELAY: RwLock<Option<Relay>> = RwLock::new(None);
+
 impl Relay {
-    pub async fn connect(&self, keypair: &KeyPair) -> Result<(), RelayConnError> {
+    pub async fn connect(mut self, keypair: &KeyPair) -> Result<(), RelayConnError> {
         let addr = SocketAddr::new(IpAddr::from_str(&self.host.clone())?, self.port);
 
         info!("RELAY({}): CONNECTING AT {}", self.id, addr);
@@ -103,10 +107,18 @@ impl Relay {
                     } else if let ServerAccept { timestamp } = msg {
                         info!("RELAY({}): Authenticated at {timestamp}", self.id);
 
+                        CONNECTION_START_TIME.store(timestamp, Ordering::Relaxed);
+
+                        // Informing App UI about conn status
                         ConnectionState::Connected.emit();
 
-                        *CONNECTION.write() = Some(conn);
+                        // Respect++
+                        self.upvote().map_err(RelayConnError::Error)?;
 
+                        self.connection = Some(conn);
+                        *RELAY.write() = Some(self);
+
+                        // Starting the handler, handles until it's connected
                         Self::handle();
 
                         return Ok(());
@@ -121,7 +133,7 @@ impl Relay {
             Err(ConnectionError::TimedOut) => {
                 ConnectionState::Failed.emit();
 
-                _ = self.downvote().await;
+                _ = self.downvote();
 
                 Err(RelayConnError::Continue)
             },
@@ -137,22 +149,27 @@ impl Relay {
             debug!("RELAY_HANDLE: STANDBY");
             loop {
                 let conn = {
-                    let guard = CONNECTION.read();
-                    guard.clone()
+                    let guard = RELAY.read();
+                    guard.as_ref().map(|r| r.connection.clone())
                 };
 
-                if let Some(conn) = conn {
+                if let Some(Some(conn)) = conn {
                     match conn.accept_bi().await {
                         Ok((_, _)) => {
                             // Server will not send client anything, YET
                         },
                         Err(err) => {
                             ConnectionState::Disconnected.emit();
+
+                            // cleanup
+                            *RELAY.write() = None;
+
                             return error!("RELAY_HANDLE: {err}");
                         },
                     };
                 } else {
                     debug!("RELAY_HANDLE: NO CONN, BYE!");
+
                     break;
                 }
             }

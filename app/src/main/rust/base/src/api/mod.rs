@@ -8,6 +8,7 @@ use quinn::{Endpoint, EndpointConfig, TransportConfig, default_runtime};
 
 use crate::{ENDPOINT, JC, RUNTIME, db::initial_execute, jni_try, utils::ujni::read_raw_res};
 
+pub mod conn_stats;
 pub mod connection;
 
 #[macro_export]

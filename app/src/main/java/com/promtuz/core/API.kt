@@ -32,19 +32,23 @@ object API {
         })
     }
 
-    // /** Initiates `android_logger` crate in `libcore` */
-    // external fun initLogger()
+    external fun initApi(context: Context)
 
-    /**
-     * Returns current connection state
-     */
+    //=||=||=||=||=||==|  STATS  |==||=||=||=||=||=//
+
+    // Returns current connection state
     val connectionState: ConnectionState
         get() = ConnectionState.fromInt(getInternalConnectionState())
 
     private external fun getInternalConnectionState(): Int
 
-    external fun initApi(context: Context)
-    external fun connect(context: Context, ipk: ByteArray, isk: ByteArray)
+    external fun getNetworkStats(): ByteArray
+
+    //=||=||=||=||=||=| CONNECTION |=||=||=||=||=||=//
+
+    external
+
+    fun connect(context: Context, ipk: ByteArray, isk: ByteArray)
 
     //=||=||=||=||=||==|  EVENTS  |==||=||=||=||=||=//
 

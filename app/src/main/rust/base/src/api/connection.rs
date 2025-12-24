@@ -1,17 +1,11 @@
-use std::sync::atomic::AtomicI32;
-use std::sync::atomic::Ordering;
-
 use common::msg::reason::CloseReason;
 use jni::JNIEnv;
 use jni::objects::JByteArray;
 use jni::objects::JObject;
-use jni::sys::jint;
 use log::debug;
 use log::error;
 use log::info;
 use macros::jni;
-use parking_lot::RwLock;
-use quinn::Connection;
 
 use crate::JC;
 use crate::RUNTIME;
@@ -21,15 +15,11 @@ use crate::events::Emittable;
 use crate::events::connection::ConnectionState;
 use crate::jni_try;
 use crate::quic::server::KeyPair;
+use crate::quic::server::RELAY;
 use crate::quic::server::RelayConnError;
 use crate::utils::KeyConversion;
 use crate::utils::has_internet;
 use crate::utils::ujni::read_raw_res;
-
-/// current connection to any relay server,
-/// could be none if not connection yet
-pub static CONNECTION: RwLock<Option<Connection>> = RwLock::new(None);
-pub static CONNECTION_STATE: AtomicI32 = AtomicI32::new(ConnectionState::Idle as i32);
 
 /// Connects to Relay
 #[jni(base = "com.promtuz.core", class = "API")]
@@ -41,7 +31,7 @@ pub extern "system" fn connect(
     // SECURITY: idk, i feel like i should be concerned
     isk: JByteArray,
 ) {
-    if let Some(conn) = CONNECTION.read().clone()
+    if let Some(Some(conn)) = RELAY.read().as_ref().map(|r| r.connection.clone())
         && conn.close_reason().is_some()
     {
         debug!("API: CONNECTION ALREADY EXISTS, CLOSING!");
@@ -69,12 +59,13 @@ pub extern "system" fn connect(
             debug!("RELAY(BEST): Fetching");
             match Relay::fetch_best() {
                 Ok(relay) => {
-                    debug!("RELAY(BEST): Found [{}]", relay.id);
+                    let id = relay.id.clone();
+                    debug!("RELAY(BEST): Found [{}]", id);
                     match relay.connect(&keypair).await {
                         Ok(_) => break,
                         Err(RelayConnError::Continue) => continue,
                         Err(RelayConnError::Error(err)) => {
-                            error!("RELAY({}): Connection failed - {:?}", relay.id, err);
+                            error!("RELAY({}): Connection failed - {:?}", id, err);
                         },
                     }
                 },
@@ -95,9 +86,4 @@ pub extern "system" fn connect(
             break;
         }
     });
-}
-
-#[jni(base = "com.promtuz.core", class = "API")]
-pub extern "system" fn getInternalConnectionState(_: JNIEnv, _: JC) -> jint {
-    CONNECTION_STATE.load(Ordering::Relaxed)
 }
