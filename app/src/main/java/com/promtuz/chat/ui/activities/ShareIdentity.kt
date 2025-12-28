@@ -5,7 +5,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.promtuz.chat.presentation.viewmodel.ShareIdentityVM
-import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.ui.screens.ShareIdentityScreen
 import com.promtuz.chat.ui.theme.PromtuzTheme
 import com.promtuz.core.API
@@ -15,7 +14,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class ShareIdentity : AppCompatActivity() {
     private val viewModel: ShareIdentityVM by viewModel()
     private val api: API by inject()
-    private lateinit var keyManager: KeyManager
 
     override fun onDestroy() {
         super.onDestroy()
@@ -24,10 +22,7 @@ class ShareIdentity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        keyManager = inject<KeyManager>().value
-        keyManager.initialize()
-
+        
         enableEdgeToEdge()
 
         api.identityInit()

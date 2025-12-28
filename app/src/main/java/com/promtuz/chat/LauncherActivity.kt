@@ -9,8 +9,8 @@ import androidx.lifecycle.lifecycleScope
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.ui.activities.App
 import com.promtuz.chat.ui.activities.Welcome
+import com.promtuz.core.API
 import kotlinx.coroutines.launch
-import org.koin.android.ext.android.inject
 
 class LauncherActivity : ComponentActivity() {
     private lateinit var keyManager: KeyManager
@@ -25,12 +25,9 @@ class LauncherActivity : ComponentActivity() {
             keepSplashOnScreen
         }
 
-        keyManager = inject<KeyManager>().value
-        keyManager.initialize()
-
         lifecycleScope.launch {
             try {
-                if (keyManager.hasSecretKey()) {
+                if (API.shouldLaunchApp()) {
                     startActivity(
                         Intent(this@LauncherActivity, App::class.java)
                     )

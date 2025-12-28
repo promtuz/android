@@ -5,18 +5,16 @@ import android.app.Application
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.promtuz.chat.data.local.databases.AppDatabase
 import com.promtuz.chat.presentation.state.WelcomeField
 import com.promtuz.chat.presentation.state.WelcomeStatus
 import com.promtuz.chat.presentation.state.WelcomeUiState
+import com.promtuz.core.API
 import org.koin.core.component.KoinComponent
 
 class WelcomeVM(
     private val application: Application,
-    appDatabase: AppDatabase
+    private val api: API
 ) : ViewModel(), KoinComponent {
-//    private val context: Context get() = application.applicationContext
-//    private val users = appDatabase.userDao()
 
     private val _uiState = mutableStateOf(
         WelcomeUiState(
@@ -27,15 +25,22 @@ class WelcomeVM(
 
     fun <T> onChange(field: WelcomeField, value: T) {
         _uiState.value = when (field) {
-            WelcomeField.Nickname -> _uiState.value.copy(nickname = value as String)
+            WelcomeField.Name -> _uiState.value.copy(name = value as String)
             WelcomeField.Error -> _uiState.value.copy(errorText = value as String?)
             WelcomeField.Status -> _uiState.value.copy(status = value as WelcomeStatus)
         }
     }
 
     fun `continue`(onSuccess: () -> Unit) {
+        val name = uiState.value.name
+        if (name.isEmpty()) return
+
         onChange(WelcomeField.Status, WelcomeStatus.Generating)
 
-        // TODO: reimplement in `libcore`
+        if (api.welcome(name)) {
+            onSuccess()
+        } else {
+            onChange(WelcomeField.Status, WelcomeStatus.Normal)
+        }
     }
 }

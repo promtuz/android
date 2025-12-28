@@ -5,10 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.promtuz.chat.presentation.viewmodel.WelcomeVM
-import com.promtuz.chat.security.KeyManager
 import com.promtuz.chat.ui.screens.WelcomeScreen
 import com.promtuz.chat.ui.theme.PromtuzTheme
-import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
@@ -29,17 +27,14 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
  *  Hence, this encrypted blob is somewhat safe to move around *i suppose?*.
  */
 class Welcome : ComponentActivity() {
-    private lateinit var keyManager: KeyManager
-
     private val viewModel by viewModel<WelcomeVM>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        keyManager = inject<KeyManager>().value
-        keyManager.initialize()
-
         enableEdgeToEdge()
+
+        getDatabasePath("identity.db")
 
         setContent {
             PromtuzTheme {

@@ -7,7 +7,7 @@
 
     <!--  Welcome Screen  -->
     <string name="welcome_screen_title">Welcome!</string>
-    <string name="welcome_screen_name_label">What should we call you? (Optional)</string>
+    <string name="welcome_screen_name_label">What should we call you?</string>
     <string name="welcome_screen_example_name">eg. John Doe</string>
 
     <string name="welcome_status_normal">Continue</string>

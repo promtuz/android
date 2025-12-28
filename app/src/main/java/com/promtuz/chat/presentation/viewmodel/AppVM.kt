@@ -88,7 +88,7 @@ class AppVM(
         if (connecting) return
 
         viewModelScope.launch {
-            api.connect(context, keyManager.getPublicKey(), keyManager.getSecretKey())
+            api.connect(context)
         }
     }
 }

@@ -1,110 +1,77 @@
 package com.promtuz.chat.security
 
-//import kotlinx.io.IOException
-import android.content.Context
-import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import androidx.core.content.edit
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import kotlin.io.encoding.Base64
-import javax.crypto.SecretKey as JSecretKey
-
-class KeyManager(context: Context) {
-    companion object {
-        private const val WRAPPER_KEY_ALIAS = "encryptor"
-        private const val PREFS_NAME = "keys"
-        private const val IDENTITY_SECRET = "private_identity"
-        private const val IDENTITY_SECRET_IV = "private_identity_iv"
-        private const val IDENTITY_PUBLIC = "public_identity"
-    }
-
-    private val keyStore: KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
 
-    fun initialize() {
-        if (!keyStore.containsAlias(WRAPPER_KEY_ALIAS)) {
-            generateWrapperKey()
+object KeyManager {
+    private const val KEY_ALIAS = "master_key"
+    private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+    private const val TRANSFORMATION = "AES/GCM/NoPadding"
+
+    init {
+        // Generate key if doesn't exist
+        if (!keyExists()) {
+            generateKey()
         }
     }
 
-    private fun generateWrapperKey() {
-        val keyGenerator =
-            KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+    private fun keyExists(): Boolean {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+        keyStore.load(null)
+        return keyStore.containsAlias(KEY_ALIAS)
+    }
+
+    private fun generateKey() {
+        val keyGenerator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE
+        )
+
         val spec = KeyGenParameterSpec.Builder(
-            WRAPPER_KEY_ALIAS,
-            KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
         ).apply {
             setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             setKeySize(256)
-            setRandomizedEncryptionRequired(true)
+            setUserAuthenticationRequired(false)
         }.build()
+
         keyGenerator.init(spec)
         keyGenerator.generateKey()
     }
 
-    /**
-     * Encrypts the original main secret key with keystore's key to safely store it
-     * returning the cipher and iv in pair
-     */
-    private fun encryptWithKeystoreKey(data: ByteArray): Pair<ByteArray, ByteArray> {
-        val secretKey = keyStore.getKey(WRAPPER_KEY_ALIAS, null) as JSecretKey
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-        return Pair(cipher.doFinal(data), cipher.iv)
+    private fun getKey(): SecretKey {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+        keyStore.load(null)
+        return keyStore.getKey(KEY_ALIAS, null) as SecretKey
     }
 
-    private fun decryptWithKeystoreKey(encryptedData: ByteArray, iv: ByteArray): ByteArray {
-        val secretKey = keyStore.getKey(WRAPPER_KEY_ALIAS, null) as JSecretKey
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, iv))
-        return cipher.doFinal(encryptedData)
+    @JvmStatic
+    fun encrypt(bytes: ByteArray): ByteArray {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, getKey())
+
+        val iv = cipher.iv  // 12 bytes for GCM
+        val ciphertext = cipher.doFinal(bytes)
+
+        // Return: [iv:12][ciphertext][tag:16] (tag appended by GCM)
+        return iv + ciphertext
     }
 
+    @JvmStatic
+    fun decrypt(encrypted: ByteArray): ByteArray {
+        val iv = encrypted.copyOfRange(0, 12)
+        val ciphertext = encrypted.copyOfRange(12, encrypted.size)
 
-    fun storePublicKey(publicKey: ByteArray) {
-        prefs.edit {
-            putString(IDENTITY_PUBLIC, Base64.encode(publicKey))
-        }
-    }
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        val spec = GCMParameterSpec(128, iv)  // 128-bit auth tag
+        cipher.init(Cipher.DECRYPT_MODE, getKey(), spec)
 
-    fun storeSecretKey(secretKey: ByteArray) {
-        try {
-            val (encryptedKey, iv) = encryptWithKeystoreKey(secretKey)
-
-            prefs.edit {
-                putString(IDENTITY_SECRET, Base64.encode(encryptedKey))
-                putString(IDENTITY_SECRET_IV, Base64.encode(iv))
-            }
-        } finally {
-            secretKey.fill(0)
-        }
-    }
-
-    fun hasSecretKey(): Boolean {
-        return null != prefs.getString(IDENTITY_SECRET, null)
-                && null != prefs.getString(IDENTITY_SECRET_IV, null)
-    }
-
-    fun getSecretKey(): ByteArray {
-        val encryptedKeyStr = prefs.getString(IDENTITY_SECRET, null) ?: error("idk")
-        val ivStr = prefs.getString(IDENTITY_SECRET_IV, null) ?: error("idk")
-        val cipher = Base64.decode(encryptedKeyStr)
-        val iv = Base64.decode(ivStr)
-        return decryptWithKeystoreKey(cipher, iv)
-    }
-
-    //    @Throws(IOException::class)
-    fun getPublicKey(): ByteArray {
-        val pubKeyStr = prefs.getString(IDENTITY_PUBLIC, null)
-            ?: error("Public Key not found in KeyManager")
-        return Base64.decode(pubKeyStr)
+        return cipher.doFinal(ciphertext)
     }
 }

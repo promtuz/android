@@ -8,6 +8,6 @@ import org.koin.dsl.module
 
 val appModule = module {
     single { API }
-    singleOf(::KeyManager)
+    single { KeyManager }
     singleOf(::ImageUtils)
 }

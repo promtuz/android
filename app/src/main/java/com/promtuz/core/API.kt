@@ -7,7 +7,6 @@ import com.promtuz.core.events.EventCallback
 import com.promtuz.core.events.InternalEvent
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -36,6 +35,7 @@ object API {
     }
 
     external fun initApi(context: Context)
+    external fun shouldLaunchApp(): Boolean
 
     //=||=||=||=||=||==|  MISC.  |==||=||=||=||=||=//
 
@@ -54,7 +54,7 @@ object API {
 
     //=||=||=||=||=||=| CONNECTION |=||=||=||=||=||=//
 
-    external fun connect(context: Context, ipk: ByteArray, isk: ByteArray)
+    external fun connect(context: Context)
 
     //=||=||=||=||=||==|  EVENTS  |==||=||=||=||=||=//
 
@@ -73,4 +73,9 @@ object API {
 
     external fun identityInit()
     external fun identityDestroy()
+
+
+    //=||=||=||=||=||==| WELCOME! |==||=||=||=||=||=//
+
+    external fun welcome(name: String): Boolean
 }
