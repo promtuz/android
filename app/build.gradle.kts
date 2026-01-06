@@ -97,6 +97,7 @@ tasks.register<Exec>("buildRustCore") {
     ) else commandLine(
         "cargo", "ndk",
         "-t", "arm64-v8a",
+        "-t", "x86_64",
         "-o", "../android/app/src/main/jniLibs",
         "--platform", (android.defaultConfig.minSdk ?: 21).toString(),
         "build", "--release"

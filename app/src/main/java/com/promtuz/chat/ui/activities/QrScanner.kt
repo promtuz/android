@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.SystemClock
+import android.window.OnBackInvokedDispatcher
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -44,6 +45,7 @@ class QrScanner : AppCompatActivity() {
     lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
     lateinit var barcodeScanner: BarcodeScanner
     lateinit var camera: Camera
+    var previewView: androidx.camera.view.PreviewView? = null
 
     companion object {
         private const val TAG = "QrScanner"
@@ -106,6 +108,16 @@ class QrScanner : AppCompatActivity() {
     fun freezeCamera() {
         Timber.tag(TAG).d("Freezing Camera")
 
+        // Capture the current preview frame before freezing
+        try {
+            previewView?.bitmap?.let { bitmap ->
+                viewModel.setFrozenFrame(bitmap)
+                Timber.tag(TAG).d("Captured frame: ${bitmap.width}x${bitmap.height}")
+            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to capture frame")
+        }
+
         viewModel.cameraProviderState.value?.unbind()
         viewModel.imageAnalysis.clearAnalyzer()
     }
@@ -113,6 +125,7 @@ class QrScanner : AppCompatActivity() {
     fun unfreezeCamera() {
         Timber.tag(TAG).d("Unfreezing Camera")
 
+        viewModel.setFrozenFrame(null)
         viewModel.imageAnalysis.setAnalyzer(
             ContextCompat.getMainExecutor(this), qrAnalyzer()
         )

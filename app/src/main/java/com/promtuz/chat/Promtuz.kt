@@ -28,7 +28,6 @@ class Promtuz : Application() {
             proc.inputStream.bufferedReader().forEachLine { line ->
                 val head = line.substringBefore(" : ")
                 var msg = line.substringAfter(" : ")
-
                 if (!msg.startsWith("core:")) return@forEachLine
 
                 val parts = head.split(Regex("\\s+"))

@@ -20,6 +20,20 @@ import timber.log.Timber
 class QrScannerVM(
     private val application: Application, private val api: API
 ) : ViewModel() {
+    companion object {
+        @Volatile
+        private var instance: QrScannerVM? = null
+
+        @JvmStatic
+        fun onIdentityQrScanned(name: String) {
+            instance?.onIdentityQrDetected(name)
+        }
+
+        internal fun setInstance(vm: QrScannerVM) {
+            instance = vm
+        }
+    }
+
     private val context: Context get() = application.applicationContext
     private val log = Timber.tag("QrScannerVM")
 
@@ -41,6 +55,22 @@ class QrScannerVM(
 
     private val _identities = MutableStateFlow<List<Identity>>(emptyList())
     val identities = _identities.asStateFlow()
+
+    private val _isProcessingIdentity = MutableStateFlow(false)
+    val isProcessingIdentity = _isProcessingIdentity.asStateFlow()
+
+    private val _processingIdentityName = MutableStateFlow<String?>(null)
+    val processingIdentityName = _processingIdentityName.asStateFlow()
+
+    private val _frozenFrameBitmap = MutableStateFlow<android.graphics.Bitmap?>(null)
+    val frozenFrameBitmap = _frozenFrameBitmap.asStateFlow()
+
+    private val _backPressedOnce = MutableStateFlow(false)
+    val backPressedOnce = _backPressedOnce.asStateFlow()
+
+    init {
+        setInstance(this)
+    }
 
     fun setCameraProvider(provider: ProcessCameraProvider) {
         _cameraProviderState.value = provider
@@ -74,6 +104,36 @@ class QrScannerVM(
 
     fun saveUserIdentity(userIdentity: Identity) {
         _selectedIdentity.value = userIdentity
+    }
+
+    fun onIdentityQrDetected(name: String) {
+        log.d("Identity QR detected: $name")
+        _isProcessingIdentity.value = true
+        _processingIdentityName.value = name
+        _backPressedOnce.value = false
+    }
+
+    fun setFrozenFrame(bitmap: android.graphics.Bitmap?) {
+        _frozenFrameBitmap.value = bitmap
+    }
+
+    fun onBackPressedDuringProcessing() {
+        println("SYSTEM BACK PRESS -  ${_backPressedOnce.value}")
+        if (_backPressedOnce.value) {
+            // Second press - actually cancel
+            dismissProcessing()
+        } else {
+            // First press - show warning
+            _backPressedOnce.value = true
+        }
+    }
+
+    fun dismissProcessing() {
+        _isProcessingIdentity.value = false
+        _processingIdentityName.value = null
+        _frozenFrameBitmap.value = null
+        _backPressedOnce.value = false
+        // TODO: Notify peer if connected (for future implementation)
     }
 
 

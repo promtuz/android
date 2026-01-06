@@ -3,6 +3,7 @@
 package com.promtuz.chat.ui.screens
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -17,6 +18,7 @@ import androidx.camera.core.ViewPort
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -57,6 +59,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -85,6 +89,10 @@ fun QrScannerScreen(
     viewModel: QrScannerVM
 ) {
     val selectedIdentity by viewModel.selectedIdentity.collectAsState()
+    val isProcessingIdentity by viewModel.isProcessingIdentity.collectAsState()
+    val processingIdentityName by viewModel.processingIdentityName.collectAsState()
+    val frozenFrameBitmap by viewModel.frozenFrameBitmap.collectAsState()
+    val backPressedOnce by viewModel.backPressedOnce.collectAsState()
 
     Box(
         Modifier.fillMaxSize()
@@ -102,14 +110,36 @@ fun QrScannerScreen(
             )
         }
 
-        LaunchedEffect(selectedIdentity) {
-            if (selectedIdentity != null) activity.freezeCamera() else activity.unfreezeCamera()
+        // Show frozen frame overlay when processing
+        frozenFrameBitmap?.let { bitmap ->
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Frozen camera frame",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        LaunchedEffect(selectedIdentity, isProcessingIdentity) {
+            if (selectedIdentity != null || isProcessingIdentity) {
+                activity.freezeCamera()
+            } else {
+                activity.unfreezeCamera()
+            }
         }
 
         selectedIdentity?.let {
             IdentityConfirmationDialog(it, viewModel) {
                 viewModel.dismissIdentity()
             }
+        }
+
+        if (isProcessingIdentity) {
+            IdentityProcessingDialog(
+                identityName = processingIdentityName,
+                backPressedOnce = backPressedOnce,
+                viewModel = viewModel
+            )
         }
 
         LazyColumn(
@@ -249,6 +279,8 @@ private fun CameraPreview(
                 addView(previewView)
                 addView(previewOverlay)
 
+                // Store reference for bitmap capture
+                activity.previewView = previewView
                 tag = previewView
             }
         }, update = { frameLayout ->
@@ -376,6 +408,80 @@ private fun IdentityConfirmationDialog(
                 ) {
                     TextButton(onClick = onDismissRequest) {
                         Text("Close")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IdentityProcessingDialog(
+    identityName: String?,
+    backPressedOnce: Boolean,
+    viewModel: QrScannerVM
+) {
+    Dialog(onDismissRequest = {}) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                LoadingIndicator(
+                    modifier = Modifier.size(56.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    "Processing Identity",
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                identityName?.let { name ->
+                    Text(
+                        name,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Text(
+                    "Establishing secure connection...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                // Show warning if back pressed once
+                if (backPressedOnce) {
+                    Spacer(Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            "Press back again to cancel",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
