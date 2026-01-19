@@ -2,17 +2,17 @@ package com.promtuz.chat.presentation.viewmodel
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
-import android.widget.Toast
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.promtuz.chat.utils.media.ImageUtils
 import com.promtuz.core.API
-import dev.shreyaspatil.capturable.controller.CaptureController
-import kotlinx.coroutines.coroutineScope
+import com.promtuz.core.events.IdentityEvent
+import com.promtuz.core.events.InternalEvents
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 
@@ -31,41 +31,22 @@ class ShareIdentityVM(
         _qrData.value = qr
     }
 
-    suspend fun init() = coroutineScope {
-        val addr = api.getPublicAddr().await()
-
-        println("PUBLIC ADDRESS : ${addr?.hostAddress}")
-
-        // TODO: TO BE REIMPLEMENTED IN `libcore`
-    }
+    private var _identityRequest = MutableStateFlow<IdentityEvent.AddMe?>(null)
+    val identityRequest = _identityRequest.asStateFlow()
 
     init {
         viewModelScope.launch {
-            init()
-        }
-    }
+            val events = api.eventsFlow.filterIsInstance<InternalEvents.IdentityEv>()
+                .distinctUntilChanged()
 
-
-    fun shareQrCode(
-        captureController: CaptureController, shareCallback: (shareIntent: Intent) -> Unit
-    ) {
-        viewModelScope.launch {
-            val bitmapAsync = captureController.captureAsync()
-            try {
-                val bitmap = bitmapAsync.await()
-                val uri = imgUtils.saveImageCache(bitmap.asAndroidBitmap())
-
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    setType("image/png")
+            events.collect { ev ->
+                when (ev) {
+                    is IdentityEvent.AddMe -> {
+                        _identityRequest.value = ev
+                        // remove the qr cuz it's been used
+                        _qrData.value = null
+                    }
                 }
-
-                shareCallback(Intent.createChooser(shareIntent, "Share QR Code"))
-            } catch (error: Exception) {
-                Toast.makeText(
-                    context, "Failed to generate QR Image: ${error.message}", Toast.LENGTH_SHORT
-                ).show()
             }
         }
     }

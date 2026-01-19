@@ -11,7 +11,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class IdentityEvent {
     @SerialName("AddMe")
-    @Serializable class AddMe(val ipk: ByteArray, val nickname: String)
+    @Serializable class AddMe(val ipk: ByteArray, val name: String) : IdentityEvent()
+}
+
+object InternalEvents {
+    typealias ConnectionEv = ConnectionState
+    typealias IdentityEv   = IdentityEvent
 }
 
 @Serializable
@@ -23,6 +28,6 @@ sealed class InternalEvent {
     @Serializable data class Identity(val event: IdentityEvent) : InternalEvent()
 }
 
-interface EventCallback {
+fun interface EventCallback {
     fun onEvent(bytes: ByteArray)
 }

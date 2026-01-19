@@ -3,7 +3,6 @@
 package com.promtuz.chat.ui.screens
 
 import android.Manifest
-import androidx.activity.compose.BackHandler
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -80,7 +79,7 @@ import com.promtuz.chat.ui.activities.QrScanner
 import com.promtuz.chat.ui.components.GoBackButton
 import com.promtuz.chat.ui.components.IdentityHexGrid
 import com.promtuz.chat.ui.text.avgSizeInStyle
-import com.promtuz.chat.ui.views.QrOverlayView
+import com.promtuz.chat.ui.views.QrScannerOverlayView
 
 
 @Composable
@@ -269,7 +268,7 @@ private fun CameraPreview(
                     scaleType = PreviewView.ScaleType.FILL_CENTER
                 }
 
-                val previewOverlay = QrOverlayView(context).apply {
+                val previewOverlay = QrScannerOverlayView(context).apply {
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT

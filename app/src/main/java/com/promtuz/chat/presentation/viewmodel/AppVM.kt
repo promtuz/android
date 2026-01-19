@@ -12,7 +12,7 @@ import com.promtuz.chat.navigation.AppNavigator
 import com.promtuz.chat.navigation.Routes
 import com.promtuz.chat.security.KeyManager
 import com.promtuz.core.API
-import com.promtuz.core.events.InternalEvent
+import com.promtuz.core.events.InternalEvents
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import com.promtuz.chat.presentation.state.ConnectionState as CS
@@ -42,8 +41,7 @@ class AppVM(
         viewModelScope.launch {
             var titleResetJob: Job? = null
 
-            api.eventsFlow.filterIsInstance<InternalEvent.Connection>().map { it.state }
-                .distinctUntilChanged().collect { state ->
+            api.eventsFlow.filterIsInstance<InternalEvents.ConnectionEv>().distinctUntilChanged().collect { state ->
                     titleResetJob?.cancel()
 
                     _dynamicTitle.value = when (state) {

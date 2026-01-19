@@ -51,10 +51,15 @@ fun IdentityQrCode(
                     .fillMaxSize(0.4f)
             )
         }
-        
+
         AndroidView(factory = { qrView }, update = { v ->
             v.loading = loading
-            data?.let { v.content = it }
+            if (data == null) {
+                v.clear()
+            } else {
+                data?.let { v.content = it }
+                v.regenerate()
+            }
             v.color = modulesColor.toArgb()
             v.regenerate()
         })

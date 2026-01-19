@@ -20,17 +20,13 @@ import androidx.compose.ui.platform.*
 import androidx.compose.ui.unit.*
 import androidx.core.graphics.drawable.toBitmap
 import com.promtuz.chat.R
-import com.promtuz.chat.data.repository.UserRepository
 import com.promtuz.chat.domain.model.Chat
-import com.promtuz.chat.presentation.viewmodel.AppVM
 import com.promtuz.chat.presentation.viewmodel.ChatVM
 import com.promtuz.chat.ui.components.ChatBottomBar
 import com.promtuz.chat.ui.components.ChatTopBar
 import com.promtuz.chat.ui.components.MessageBubble
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * TODO:
@@ -45,7 +41,6 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ChatScreen(
     chat: Chat,
     viewModel: ChatVM,
-    userRepository: UserRepository = koinInject()
 ) {
     val direction = LocalLayoutDirection.current
     val colors = MaterialTheme.colorScheme

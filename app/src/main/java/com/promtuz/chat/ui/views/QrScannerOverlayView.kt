@@ -9,7 +9,7 @@ import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 
 @OptIn(ExperimentalGetImage::class)
-class QrOverlayView(
+class QrScannerOverlayView(
     context: Context
 ) : View(context) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -27,11 +27,9 @@ class QrOverlayView(
     private val guideCornerLength = 150f
     private val guideCornerRadius = 100f
 
-    private val frameRunnable = object : Runnable {
-        override fun run() {
-            invalidate()
-            postOnAnimation(this)
-        }
+    private val frameRunnable: Runnable = Runnable {
+        invalidate()
+        postOnAnimation(frameRunnable)
     }
 
     init {

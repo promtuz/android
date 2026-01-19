@@ -43,9 +43,13 @@ class QrView(context: Context) : View(context) {
         return (x < f && y < f) || (x >= s - f && y < f) || (x < f && y >= s - f)
     }
 
-//    private fun isCenter(x: Int, y: Int, s: Int): Boolean {
-//
-//    }
+    fun clear() {
+        matrix = null
+        roundMask = null
+        loading = true
+        content = ByteArray(0)
+        invalidate()
+    }
 
     fun regenerate() {
         if (content.isEmpty() || width <= 0) return
