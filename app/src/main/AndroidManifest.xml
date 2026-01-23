@@ -15,20 +15,15 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.VIBRATE" />
-
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
-
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
     <application
@@ -61,47 +56,38 @@
             android:name=".LauncherActivity"
             android:exported="true"
             android:theme="@style/Theme.App.Starting">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
-
         <activity
             android:name=".ui.activities.ManageSpace"
             android:exported="false"
             android:label="@string/title_activity_manage_space" />
-
         <activity
             android:name=".ui.activities.App"
             android:configChanges="orientation|screenSize|screenLayout"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="false" />
-
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.activities.Welcome"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
-
-
         <activity
             android:name=".ui.activities.QrScanner"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
-
-
         <activity
             android:name=".ui.activities.Chat"
             android:configChanges="orientation|screenSize|screenLayout"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="false" />
-
-
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.activities.ShareIdentity"
             android:configChanges="orientation|screenSize|screenLayout"
             android:exported="false" />
     </application>
+
 </manifest>

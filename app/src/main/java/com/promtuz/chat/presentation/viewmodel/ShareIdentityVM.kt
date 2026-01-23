@@ -34,6 +34,11 @@ class ShareIdentityVM(
     private var _identityRequest = MutableStateFlow<IdentityEvent.AddMe?>(null)
     val identityRequest = _identityRequest.asStateFlow()
 
+    fun rejectRequest() {
+        api.identityReject()
+        _identityRequest.value = null
+    }
+
     init {
         viewModelScope.launch {
             val events = api.eventsFlow.filterIsInstance<InternalEvents.IdentityEv>()

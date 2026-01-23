@@ -35,16 +35,12 @@ object API {
             val tag = String(bytes.sliceArray(1..tagSize))
             val valueBytes = bytes.copyOfRange(tagSize + 1, bytes.size)
 
-            Timber.tag("API").d("DEBUG: InternalEvent($tag): ${bytes.toHexString()}")
-
             try {
                 val value = when (tag) {
                     "CONNECTION" -> decode<InternalEvents.ConnectionEv>(valueBytes)
                     "IDENTITY" -> decode<InternalEvents.IdentityEv>(valueBytes)
                     else -> error("Unknown InternalEvent $tag")
                 }
-
-                Timber.tag("API").d("DEBUG: InternalEvent($tag): $value")
 
                 _eventsFlow.tryEmit(value)
             } catch (e: Exception) {
@@ -91,6 +87,8 @@ object API {
     //=||=||=||=||=||==| IDENTITY |==||=||=||=||=||=//
 
     external fun identityInit(identity: ShareIdentity)
+    external fun identityAccept()
+    external fun identityReject()
     external fun identityDestroy()
 
     external fun parseQRBytes(bytes: ByteArray)

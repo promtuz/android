@@ -80,6 +80,7 @@ import com.promtuz.chat.ui.components.GoBackButton
 import com.promtuz.chat.ui.components.IdentityHexGrid
 import com.promtuz.chat.ui.text.avgSizeInStyle
 import com.promtuz.chat.ui.views.QrScannerOverlayView
+import com.promtuz.core.events.InternalEvents
 
 
 @Composable
@@ -127,11 +128,11 @@ fun QrScannerScreen(
             }
         }
 
-        selectedIdentity?.let {
-            IdentityConfirmationDialog(it, viewModel) {
-                viewModel.dismissIdentity()
-            }
-        }
+//        selectedIdentity?.let {
+//            IdentityConfirmationDialog(it, viewModel) {
+//                viewModel.dismissIdentity()
+//            }
+//        }
 
         if (isProcessingIdentity) {
             IdentityProcessingDialog(
@@ -351,68 +352,6 @@ private fun IdentityActionButton(
     }
 }
 
-@Composable
-private fun IdentityConfirmationDialog(
-    identity: Identity,
-    viewModel: QrScannerVM,
-    onDismissRequest: () -> Unit
-) {
-    val textTheme = MaterialTheme.typography
-
-    // viewModel.connect(identity);
-
-    Dialog(onDismissRequest = onDismissRequest) {
-        Card(
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                Text(
-                    "Confirm Identity",
-                    style = MaterialTheme.typography.titleLarge
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .padding(12.dp)
-                ) {
-                    IdentityHexGrid(identity.ipk)
-                }
-
-                Text(
-                    "${identity.nickname}",
-                    Modifier
-                        .padding(top = 8.dp)
-                        .align(Alignment.CenterHorizontally),
-                    style = MaterialTheme.typography.bodyLargeEmphasized.copy(fontWeight = FontWeight.SemiBold)
-                )
-
-                Spacer(Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismissRequest) {
-                        Text("Close")
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun IdentityProcessingDialog(

@@ -52,6 +52,7 @@ object KeyManager {
     }
 
     @JvmStatic
+    @Suppress("Unused")
     fun encrypt(bytes: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getKey())
@@ -64,6 +65,7 @@ object KeyManager {
     }
 
     @JvmStatic
+    @Suppress("Unused")
     fun decrypt(encrypted: ByteArray): ByteArray {
         val iv = encrypted.copyOfRange(0, 12)
         val ciphertext = encrypted.copyOfRange(12, encrypted.size)

@@ -10,15 +10,19 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -26,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.promtuz.chat.R
 import com.promtuz.chat.presentation.viewmodel.ShareIdentityVM
 import com.promtuz.chat.ui.activities.QrScanner
@@ -43,7 +48,7 @@ fun ShareIdentityScreen(
     val colors = MaterialTheme.colorScheme
 
     Scaffold(
-        topBar = { BackTopBar("Share Identity Key") }) { innerPadding ->
+        topBar = { BackTopBar("Share Identity") }) { innerPadding ->
         Box(
             Modifier
                 .fillMaxSize()
@@ -54,20 +59,43 @@ fun ShareIdentityScreen(
                 Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(48.dp, Alignment.CenterVertically)
             ) {
-                Box(
-                    Modifier
-                        .wrapContentSize()
-                        .align(Alignment.CenterHorizontally)
-                        .capturable(captureController)
-                ) {
-                    IdentityQrCode(viewModel.qrData.collectAsState())
-                }
-                Column(
-                    Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ScanQRButton()
+                val identityRequest by viewModel.identityRequest.collectAsState()
+
+                if (identityRequest != null) {
+                    val identityRequest = identityRequest!!
+                    Dialog(onDismissRequest = { viewModel.rejectRequest() }) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .padding(16.dp),
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text(
+                                text = identityRequest.name,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .wrapContentSize(Alignment.Center),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        Modifier
+                            .wrapContentSize()
+                            .align(Alignment.CenterHorizontally)
+                            .capturable(captureController)
+                    ) {
+                        IdentityQrCode(viewModel.qrData.collectAsState())
+                    }
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ScanQRButton()
+                    }
                 }
             }
         }
